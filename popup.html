@@ -49,7 +49,7 @@
     <div class="CurrentLinkBox">
         <br>
         <div class="Cur_Commit">
-            <b>Current Commitment Link:</b>
+            <b>Current Commitment Alert:</b>
             <br>
             <button id="linkM"></button>
             <button type="x" class="x" id="x">x</button>
@@ -57,10 +57,18 @@
         </div>
         <br>
         <div class="Chat_Cur_Commit">
-            <b>Current Chat Link:</b>
+            <b>Current Chat Alert:</b>
             <br>
             <button id="chat_linkM"></button>
             <button type="x" class="chat_x" id="chat_x">x</button>
+            <br>
+        </div>
+        <br>
+        <div class="Tele_ID">
+            <b>Telegram ID:</b>
+            <br>
+            <button id="tele_idM"></button>
+            <button type="x" class="t_x" id="t_x">x</button>
             <br>
         </div>
         <br>
@@ -74,6 +82,12 @@
         Chat Alert Link:
         <br>
         <input type="text" id="Chat_YTlink" name="Chat_YTlink" placeholder="https://">
+        <br>
+        <br>
+        Telegram ID:
+        <br>
+        <input type="text" id="TeleID" name="TeleID" placeholder=""><br>
+        <small><u><a href="https://wilsonngo.com/kb/commitment_alerts/telegram_alert.html" target="_blank">How to setup Telegram alerts</a></u></small>
     </div>
 
     &nbsp;
@@ -102,12 +116,24 @@
         </b>
         <br><br>
         <b>
+            v2.0300
+        </b>
+        <br>
+        -Alerts can now be sent to Telegram!
+        <br><br>
+        -Optimized code
+        <br><br>
+        -Removed scrollbar so it doesn't adjust the size of the window
+        <br><br>
+        -Improved expansion when clicking on settings or version
+        <br><br>
+        <b>
             v2.0200
         </b>
         <br>
         -Logo now links to commitment in case if commitment box disappears
         <br><br>
-        -Now compatible with Lightning edition of Salesforce
+        -Now compatible with Lightning edition of Salesforce (with some limitations)
         <br><br>
         -Bug fixes
         <br><br>
@@ -175,6 +201,7 @@
                     Designed and developed by Wilson
                 </a>
             </p>
+            <p id="gfg" style="text-align: center"></p>
         </small>
     </a>
 </div>

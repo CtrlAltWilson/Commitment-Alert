@@ -6,7 +6,8 @@ function launchLink(route) //1 = commitment, 0 = chat
         'enabledDisabled',
         'mytext',
         'chat_mytext',
-        'endTime'
+        'endTime',
+        'tid_mytext'
     ], function(data) {
         //checks if Enabled
         if (data.enabledDisabled === true) {
@@ -15,6 +16,7 @@ function launchLink(route) //1 = commitment, 0 = chat
             var result = 0;
             var d = new Date();
             var startTime = d.getTime();
+            var textMe = 1;
 
             if (data.endTime === undefined || data.endTime === "" || data.endTime < startTime) {
                 chrome.storage.sync.set({
@@ -22,6 +24,11 @@ function launchLink(route) //1 = commitment, 0 = chat
                 }, function() {})
                 result = 1;
             }
+
+            if(data.tid_mytext === undefined || data.tid_mytext === ""){
+                textMe = 0;
+            }
+
             //alert(result + "time: " + data.endTime);
             if (result === 1) {
                 if (route === 1) {
@@ -41,12 +48,64 @@ function launchLink(route) //1 = commitment, 0 = chat
                         var Linkwindow = window.open(link, "Chat", "resizable,scrollbars,status");
                     }
                 }
+
+                if (textMe){
+                    RaptorRCBot(route);
+                }
             }
         } else {
             //do nothing
         }
     });
 }
+
+//CAIPMSG
+function RaptorCAIPBot(route){
+	var url = "https://api.telegram.org/bot1215047277:AAFORUNG90dW4kRwJoiLkK0ndTVsA1EDZi0/sendMessage";
+
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", url);
+
+	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+	xhr.onreadystatechange = function () {
+	   if (xhr.readyState === 4) {
+		  console.log(xhr.status);
+		  console.log(xhr.responseText);
+	   }};
+	    var data = "chat_id=-607233017&text=" + route;
+
+	xhr.send(data);
+}
+
+//Telegram messaging
+function RaptorRCBot(route){
+    chrome.storage.sync.get(['tid_mytext'], function(data){
+        var T_ID = data.tid_mytext;
+
+        var url = "https://api.telegram.org/bot1215047277:AAFORUNG90dW4kRwJoiLkK0ndTVsA1EDZi0/sendMessage";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        xhr.onreadystatechange = function () {
+           if (xhr.readyState === 4) {
+              console.log(xhr.status);
+              console.log(xhr.responseText);
+           }};
+        if (route === 0){
+            var data = "chat_id="+ T_ID +"&text=You have a chat!";
+        } else {
+            var data = "chat_id="+ T_ID +"&text=You have a commitment!";
+        }
+
+        xhr.send(data);
+
+	});
+}
+
 
 //for commitments
 if ((window.location.href.indexOf("https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=") > -1)) {

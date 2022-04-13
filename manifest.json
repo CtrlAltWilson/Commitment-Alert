@@ -1,6 +1,6 @@
 {
   "name": "Commitment Alert!",
-  "version": "2.02",
+  "version": "2.0300",
   "manifest_version": 2,
   "browser_action": {
     "default_popup": "popup.html",

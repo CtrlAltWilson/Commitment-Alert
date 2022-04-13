@@ -2,12 +2,12 @@ body,
 html {
     background-color: white;
     overflow: scroll;
+    width: 246px;
+    margin: 0px;
 }
 
 ::-webkit-scrollbar {
-    width: 0px;
-    background: transparent;
-    /* make scrollbar transparent */
+    display: none;
 }
 
 body {
@@ -39,7 +39,7 @@ body {
     display: none;
     overflow: hidden;
     background-color: #f1f1f1;
-    border-radius: 5px;
+    border-radius: 20px;
 }
 
 .separator {
@@ -191,17 +191,16 @@ a {
     padding: 5px;
 }
 
-.Cur_Commit {
-    text-align: center;
-}
-
+.Cur_Commit,
+.Tele_ID,
 .Chat_Cur_Commit {
     text-align: center;
 }
 
+button[id="tele_idM"],
 button[id="linkM"],
 button[id="chat_linkM"] {
-    color: yellow;
+    color: black;
     min-width: 25%;
     max-width: 55%;
     overflow: hidden;
@@ -213,6 +212,7 @@ button[id="chat_linkM"] {
     border: 2px solid #e4fdff;
 }
 
+button[id="tele_idM"]:hover,
 button[id="linkM"]:hover,
 button[id="chat_linkM"]:hover {
     background-color: #36eeff;

@@ -4,8 +4,10 @@ version.innerHTML = "v" + chrome.runtime.getManifest().version; // + " Wilson Ed
 
 //show saved hyperlink
 function CurrentLink() {
-    chrome.storage.sync.get(['mytext', 'chat_mytext'], function(data) {
-        eraseText();
+    chrome.storage.sync.get(['mytext', 'chat_mytext', 'tid_mytext'], function(data) {
+        eraseText(); //clears out textbox
+
+        //COMMITMENT
         var linkMessage = document.getElementById("linkM");
 
         if (data.mytext === undefined || data.mytext === "") {
@@ -20,6 +22,8 @@ function CurrentLink() {
             $('#x').show();
             document.getElementById("linkM").style.margin = "0px 0px 0 50px";
         }
+
+        //CHAT
         var chat_linkMessage = document.getElementById("chat_linkM");
 
         if (data.chat_mytext === undefined || data.chat_mytext === "") {
@@ -33,6 +37,23 @@ function CurrentLink() {
             //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
             $('#chat_x').show();
             document.getElementById("chat_linkM").style.margin = "0px 0px 0 50px";
+        }
+
+        //TELEGRAM
+        var tele_idMessage = document.getElementById("tele_idM");
+
+        if (data.tid_mytext === undefined || data.tid_mytext === "") {
+            //tele_idMessage.innerHTML = "---";
+            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
+            $('.Tele_ID').hide();
+            $('#t_x').hide();
+            document.getElementById("tele_idM").style.margin = "0px 50px 0 50px";
+        } else {
+            $('.Tele_ID').show();
+            $('#t_x').show();
+            tele_idMessage.innerHTML = "<a style=\"color: #696969;\">" + data.tid_mytext + "</a>";
+            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
+            document.getElementById("tele_idM").style.margin = "0px 0px 0 50px";
         }
     });
 }
@@ -60,8 +81,10 @@ document.addEventListener('DOMContentLoaded', function() {
         //grabs the value from the textbox
         var clickYT = document.getElementById("YTlink").value;
         var chat_clickYT = document.getElementById("Chat_YTlink").value;
+        var tele_click = document.getElementById("TeleID").value;
+        var isSuccess = 0;
         //check to see if link entered is blank
-        if (clickYT.trim() === "" && chat_clickYT.trim() === "") {
+        if (clickYT.trim() === "" && chat_clickYT.trim() === "" && tele_click.trim() === "") {
             //var b = document.createElement('div');
             var b = document.getElementById("Saved");
 
@@ -71,7 +94,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 b.innerHTML = "";
             }, 1000);
 
-        } else if (clickYT.trim() != "" && chat_clickYT.trim() === "") {
+        }
+        if (clickYT.trim() != ""){
             var clickYTTRIM = clickYT.trim();
 
             //setting link
@@ -81,10 +105,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Value is set to ' + clickYTTRIM);
             });
 
-            //show saved after save button is clicked
-            SavedLink();
-            CurrentLink();
-        } else if (clickYT.trim() === "" && chat_clickYT.trim() != "") {
+            isSuccess = 1;
+        }
+        if (chat_clickYT.trim() != ""){
             var chat_clickYTTRIM = chat_clickYT.trim();
 
             //Chat setting link
@@ -94,29 +117,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Chat value is set to ' + chat_clickYTTRIM);
             });
 
-            //show saved after save button is clicked
-            SavedLink();
-            CurrentLink();
-        } else if (clickYT.trim() != "" && chat_clickYT.trim() != "") {
-            var chat_clickYTTRIM = chat_clickYT.trim();
-            var clickYTTRIM = clickYT.trim();
+            isSuccess = 1;
+        }
+        if(tele_click.trim() != "" && tele_click.trim().match(/^[0-9]+$/) != null){
+            var tele_clickTRIM = tele_click.trim();
 
-            //setting link
             chrome.storage.sync.set({
-                mytext: clickYTTRIM
+                tid_mytext: tele_clickTRIM
             }, function() {
-                console.log('Value is set to ' + clickYTTRIM);
+                console.log('Telegram ID value is set to ' + tele_clickTRIM);
             });
 
-            //chat setting link
-            chrome.storage.sync.set({
-                chat_mytext: chat_clickYTTRIM
-            }, function() {
-                console.log('Value is set to ' + chat_clickYTTRIM);
-                console.log('Chat value is set to ' + chat_clickYTTRIM);
-            });
+            isSuccess = 1;
+        }
+        if (tele_click.trim().match(/^[0-9]+$/) == null){
+            var b = document.getElementById("Saved");
 
-            //show saved after save button is clicked
+            b.innerHTML = "Telegram ID can only be in numbers!";
+            document.getElementsByTagName('body')[0].appendChild(b); //<<< append the element to the pages body
+            setTimeout(function() {
+                b.innerHTML = "";
+            }, 3000);
+        }
+
+        if (isSuccess) {
             SavedLink();
             CurrentLink();
         }
@@ -135,6 +159,9 @@ document.addEventListener('DOMContentLoaded', function() {
         chrome.storage.sync.set({
             chat_mytext: ""
         }, function() {})
+        chrome.storage.sync.set({
+            tid_mytext: ""
+        }, function() {})
         SavedLink();
         CurrentLink();
     }
@@ -150,9 +177,11 @@ for (i = 0; i < coll.length; i++) {
         this.classList.toggle("active");
         var content = this.nextElementSibling;
         if (content.style.display === "block") {
-            content.style.display = "none";
+            //content.style.display = "none";
+            $(".content").slideUp();
         } else {
-            content.style.display = "block";
+            //content.style.display = "block";
+            $(".content").slideDown();
         }
     });
 }
@@ -180,9 +209,11 @@ $(document).ready(function() {
     //On click for Link Settings
     $("#settings").click(function() {
         if (showSettings === 1) {
+            $(".aligncenter").slideUp();
             $("#link_settings").slideDown();
             showSettings = 0;
         } else {
+            $(".aligncenter").slideDown();
             $("#link_settings").slideUp();
             showSettings = 1;
         }
@@ -192,6 +223,7 @@ $(document).ready(function() {
 function eraseText() {
     document.getElementById("YTlink").value = "";
     document.getElementById("Chat_YTlink").value = "";
+    document.getElementById("TeleID").value="";
 }
 
 //x button
@@ -221,6 +253,21 @@ document.addEventListener('DOMContentLoaded', function() {
         CurrentLink();
     }
 }, false)
+
+//teleID x button
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('button[class="t_x"]').addEventListener('click', onclick, false)
+
+    function onclick() {
+        //chrome.storage.sync.clear();
+        chrome.storage.sync.set({
+            tid_mytext: ""
+        }, function() {})
+        SavedLink();
+        CurrentLink();
+    }
+}, false)
+
 
 //get the domain from the url link
 function domain_from_url(url) {

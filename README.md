@@ -1,0 +1,1 @@
+Please have at least one window with Salesforce visible on screen else the chat alert will not work.

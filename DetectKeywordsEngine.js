@@ -33,10 +33,6 @@ function launchLink()
                     link = data.mytext;
                     var Linkwindow = window.open(link, "Commitment", "resizable,scrollbars,status");
                 }
-
-                var request = new XMLHttpRequest();
-                request.open("POST", "https://hook.integromat.com/4c9xrt33vhl3pxs3s68uisru1oi4upxy");
-                request.send();
             }
         } else
         {

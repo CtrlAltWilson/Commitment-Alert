@@ -30,58 +30,7 @@ HighlightsData=(
         }
     }
 });
-/*
-{
-    "Version":"19",
-    "neverHighlightOn":[],
-    "ShowFoundWords":true,
-    "PrintHighlights":true,
-    "Donate":1622730767023,
-    "PerformanceSetting":200,
-    "Groups":
-    {
-        "Default Group":
-        {
-            "Color":"#FF8C00",
-            "Fcolor":"#FFFF66",
-            "ShowInEditableFields":true,
-            "Enabled":true,
-            "FindWords":true,
-            "ShowOn":["home-c28.incontact.com/inContact/Default.aspx"],
-            "DontShowOn":[],
-            "Words":["Wilson Ngo"],
-            "Type":"local",
-            "Modified":1584365932638,
-            "NotifyOnHighlight":false,
-            "NotifyFrequency":1,
-            "storage":"local",
-            "regexTokens":false,
-            "caseSensitive":false},
-            "chat test":
-            {
-                "Color":"#00FF00",
-                "Fcolor":"#000000",
-                "Enabled":false,"ShowOn":[],
-                "DontShowOn":[],
-                "FindWords":true,
-                "Type":"local",
-                "ShowInEditableFields":false,
-                "NotifyOnHighlight":false,
-                "NotifyFrequency":"1",
-                "storage":"local",
-                "regexTokens":false,
-                "caseSensitive":false,
-                "Modified":1614379782813,
-                "action":
-                {
-                    "type":"1",
-                    "actionLink":"https://youtu.be/8RUuWPc-5o8?t=57"
-                },
-                "Words":["Download Log","Automatic","Chat","Cases"]
-            }
-        }
-    }
-*/
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse)
     {

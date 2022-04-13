@@ -1,6 +1,6 @@
 {
   "name": "Commitment Alert!",
-  "version": "1.9001",
+  "version": "2.0000",
   "manifest_version": 2,
   "browser_action": {
     "default_popup": "popup.html",
@@ -39,6 +39,7 @@
     "https://raptor--icagentconsole.na137.visual.force.com/*"
   ],
   "web_accessible_resources": [
-    "melodyFinal.mp3"
+    "melodyFinal.mp3",
+    "chat_melody.mp3"
   ]
 }

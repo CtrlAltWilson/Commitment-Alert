@@ -1,161 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Commitment Alerts</title>
-        <style>
-            .aligncenter
-            {
-                text-align: center;
-            }
 
-            .collapsible
-            {
-                background-color: white;
-                color: black;
-                cursor: pointer;
-                border: none;
-                text-align: left;
-                outline: none;
-                font-size: 10px;
-            }
+<head>
+    <meta charset="UTF-8">
+    <title>Commitment Alerts</title>
 
-            .active, .collapsible:hover
-            {
-                background-color: #D6ECF3;
-            }
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css">
+    <script src="libs/jquery/jquery-3.3.1.js"></script>
+</head>
 
-            .content
-            {
-                padding: 0 18px;
-                display: none;
-                overflow: hidden;
-                background-color: #f1f1f1;
-            }
+<body>
 
-        </style>
-    </head>
-    <body>
+<p class="aligncenter">
+    <img src="/icons/48x48.png" class="center"><br>
+</p>
 
-        <p class="aligncenter">
-            <img src="/icons/48x48.png" class="center"><br>
-        </p>
-
-        <p class="aligncenter">
-            <img src="/icons/title 230x32.png" class="center"><br>
-        </p>
+<p class="aligncenter">
+    <img src="/icons/title 230x32.png" class="center"><br>
+</p>
 
 
-        <!--TEXTBOX INPUT FOR LINK SAVING-->
-        <div id="textBox" style="text-align: center">
-            Set Alert Link:
-            <input type="text" id="YTlink" name="YTlink" placeholder="https://">
+
+<br>
+<div class="switch_centered">
+    <div class="onoffswitch">
+        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="enabledDisabled">
+        <label for="enabledDisabled" class="enabledDisabled-label">
+            Switch
+        </label>
+    </div>
+</div>
+<br>
+<div class="separator">
+    ____________________
+</div>
+<br>
+
+
+
+<div class="settings_frame">
+
+    <a href="#" id="settings" class="settings"><img class="setting_img" src="assets/images/settings.png"></a>
+</div>
+<div id="link_settings">
+    <!--TEXTBOX INPUT FOR LINK SAVING-->
+
+    <div class="CurrentLinkBox">
+        <br>
+        <div class="Cur_Commit">
+            <b>Current Commitment Link:</b>
+            <br>
+            <button id="linkM"></button>
+            <button type="x" class="x" id="x">x</button>
+            <br>
         </div>
-
-        &nbsp;
-
-        <div id="Buttons" style="text-align: center">
-            <button type="submit">Save</button>
-
-            &nbsp;&nbsp;&nbsp;
-
-            <button type="default">Default</button>
+        <br>
+        <div class="Chat_Cur_Commit">
+            <b>Current Chat Link:</b>
+            <br>
+            <button id="chat_linkM"></button>
+            <button type="x" class="chat_x" id="chat_x">x</button>
+            <br>
         </div>
+        <br>
+    </div>
+    <div id="textBox">
+        Commitment Alert Link:
+        <br>
+        <input type="text" id="YTlink" name="YTlink" placeholder="https://">
+        <br>
+        <br>
+        Chat Alert Link:
+        <br>
+        <input type="text" id="Chat_YTlink" name="Chat_YTlink" placeholder="https://">
+    </div>
 
-        <div class="onoffswitch" style="text-align: center">
-            Enabled:
-            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="enabledDisabled">
-        </div>
+    &nbsp;
 
-        <div class="separator" style="text-align: center">
-            ____________________
-        </div>
+    <div id="Buttons">
+        <button type="submit">Save</button>
 
-        <p id="linkM" style="text-align: center"></p>
-        <p id="Saved" style="text-align: center"></p>
+        &nbsp;&nbsp;&nbsp;
 
-        <p button type="button" class="collapsible" id="versionCheck" style="text-align: center"></p>
-        <div class="content">
-            <a>
-                <b>
-                    Note:
-                </b>
-                <br>
-                Please have at least one window with Salesforce visible on screen else the chat alert will not work.
-                <br>
-                <br>
+        <button type="default">Reset</button>
+    </div>
+</div>
+<p id="Saved" style="text-align: center"></p>
+<p button type="button" class="collapsible" id="versionCheck" style="text-align: center"></p>
+<div class="content">
+    <a>
+        <br>
+        <b>
+            Note:
+        </b>
+        <br>
+        Please have at least one window with Salesforce visible on screen else the chat alert will not work.
+        <br>
+        <br>
 
-                <b>
-                    Updates:
-                </b>
-                <br>
-                <br>
-                <b>
-                    v1.9001
-                </b>
-                <br>
-                -Minor bug fixes
-                <br>
-                <br>
-                <b>
-                    v1.9000 It's over 9000!
-                </b>
-                <br>
-                -Fixed multiple windows from loading up due to opened tabs and delayed it by 30 seconds
-                <br>
-                <br>
-                -Minor bug fixes
-                <br>
-                <br>
-                <b>
-                    v1.8904
-                </b>
-                <br>
-                -Inserted plug
-                <br>
-                <br>
-                -Minor bug fixes
-                <br>
-                <br>
-                <b>
-                    v1.8903
-                </b>
-                <br>
-                -Fixed bug where pop up appears for both chat box and Salesforce
-                <br>
-                <br>
-                <b>
-                    v1.8902
-                </b>
-                <br>
-                -Fixed bug where extension would not be automatically enabled on first install.
-                <br>
-                <br>
-                -Fixed bug where alert will appear as many times as the amount of Salesforce tabs that are opened.
-                <br>
-                <br>
-                -Default sound is now a local resource.
-                <br>
-                <br>
-                -Version is now implemented into pop up with notes.
-                <br>
-                <br>
-                -Cleaned some code.
-                <br>
-                <br>
-                <br>
-                <small>
-                    <p style="text-align: center">
-                        <a href="http://www.wilsonngo.com" target="_blank">
-                            Designed and developed by Wilson
-                        </a>
-                    </p>
-                </small>
-            </a>
-        </div>
+        <b>
+            Updates:
+        </b>
+        <br>
+        <br>
+        <b>
+            v2.0000
+        </b>
+        <br>
+        -UI make over!
+        <br>
+        <br>
+        -You can now have a separate alert link for your chat pop ups
+        <br>
+        <br>
+        -New default sound for chat
+        <br>
+        <br>
+        <b>
+            v1.9001
+        </b>
+        <br>
+        -Minor bug fixes
+        <br>
+        <br>
+        <b>
+            v1.9000 It's over 9000!
+        </b>
+        <br>
+        -Fixed multiple windows from loading up due to opened tabs and delayed it by 30 seconds
+        <br>
+        <br>
+        -Minor bug fixes
+        <br>
+        <br>
+        <b>
+            v1.8904
+        </b>
+        <br>
+        -Inserted plug
+        <br>
+        <br>
+        -Minor bug fixes
+        <br>
+        <br>
+        <b>
+            v1.8903
+        </b>
+        <br>
+        -Fixed bug where pop up appears for both chat box and Salesforce
+        <br>
+        <br>
+        <b>
+            v1.8902
+        </b>
+        <br>
+        -Fixed bug where extension would not be automatically enabled on first install.
+        <br>
+        <br>
+        -Fixed bug where alert will appear as many times as the amount of Salesforce tabs that are opened.
+        <br>
+        <br>
+        -Default sound is now a local resource.
+        <br>
+        <br>
+        -Version is now implemented into pop up with notes.
+        <br>
+        <br>
+        -Cleaned some code.
+        <br>
+        <br>
+        <br>
+        <small>
+            <p style="text-align: center">
+                <a href="http://www.wilsonngo.com" target="_blank">
+                    Designed and developed by Wilson
+                </a>
+            </p>
+        </small>
+    </a>
+</div>
 
-        <script src="EnableDisable.js" charset="utf-8"></script>
-        <script src="popup.js" charset="utf-8"></script>
+<script src="EnableDisable.js" charset="utf-8"></script>
+<script src="popup.js" charset="utf-8"></script>
 
-    </body>
+</body>
+
 </html>

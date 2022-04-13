@@ -1,65 +1,64 @@
 var highlighterEnabled = true;
-var debug= false;
+var debug = false;
 
-HighlightsData=(
-{
-    "Groups":
-    {
-        "chat test":
-        {
-            "Color":"",
-            "Fcolor":"",
-            "Enabled":true,
-            "ShowOn":[],
-            "DontShowOn":[],
-            "FindWords":true,
-            "Type":"local",
-            "ShowInEditableFields":false,
-            "NotifyOnHighlight":false,
-            "NotifyFrequency":"1",
-            "storage":"local",
-            "regexTokens":false,
-            "caseSensitive":false,
+HighlightsData = ({
+    "Groups": {
+        "chat test": {
+            "Color": "",
+            "Fcolor": "",
+            "Enabled": true,
+            "ShowOn": [],
+            "DontShowOn": [],
+            "FindWords": true,
+            "Type": "local",
+            "ShowInEditableFields": false,
+            "NotifyOnHighlight": false,
+            "NotifyFrequency": "1",
+            "storage": "local",
+            "regexTokens": false,
+            "caseSensitive": false,
             //"Modified":1614282896021,
-            "action":
-            {
-                "type":"1",
+            "action": {
+                "type": "1",
             },
-            //"Words":["Available"]
-            "Words":["There is a chat contact waiting. Do you want to accept it"]
+            //"Words":["Unavailable"]
+            //"Words":["Case"]
+            "Words": ["There is a chat contact waiting. Do you want to accept it"]
         }
     }
 });
 
 chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse)
-    {
-        if(request.command=="getWords")
-        {
-            sendResponse({words:getWords(request.url)});
+    function(request, sender, sendResponse) {
+        if (request.command == "getWords") {
+            sendResponse({
+                words: getWords(request.url)
+            });
         }
-        if(request.command=="getStatus")
-        {
-            sendResponse({status:highlighterEnabled, config:getConfig()});
+        if (request.command == "getStatus") {
+            sendResponse({
+                status: highlighterEnabled,
+                config: getConfig()
+            });
         }
         return true;
     }
 );
 
 //checks if installed
-function isInstalled()
-{
-chrome.storage.sync.get([
-    'firstInstall',
-    'enabledDisabled'
-    ], function(install)
-    {
-        if(install.firstInstall === false || install.firstInstall === null || install.firstInstall === undefined)
-        {
-            if(install.enabledDisabled === undefined || install.enabledDisabled === null)
-            {
-                chrome.storage.sync.set({ 'enabledDisabled': true }, function() {})
-                chrome.storage.sync.set({ 'firstInstall': true }, function() {})
+function isInstalled() {
+    chrome.storage.sync.get([
+        'firstInstall',
+        'enabledDisabled'
+    ], function(install) {
+        if (install.firstInstall === false || install.firstInstall === null || install.firstInstall === undefined) {
+            if (install.enabledDisabled === undefined || install.enabledDisabled === null) {
+                chrome.storage.sync.set({
+                    'enabledDisabled': true
+                }, function() {})
+                chrome.storage.sync.set({
+                    'firstInstall': true
+                }, function() {})
             }
         }
     });
@@ -67,60 +66,68 @@ chrome.storage.sync.get([
 
 isInstalled();
 
-function getGroups(inData, inUrl, inResults){
-    var groupsForUrl=inResults;
+function getGroups(inData, inUrl, inResults) {
+    var groupsForUrl = inResults;
     try {
 
         for (var highlightData in inData.Groups) {
-            var returnHighlight=false;
-            if (inData.Groups[highlightData].Enabled){
-                if (inUrl==''||inData.Groups[highlightData].ShowOn.length==0){
-                    returnHighlight=true;
+            var returnHighlight = false;
+            if (inData.Groups[highlightData].Enabled) {
+                if (inUrl == '' || inData.Groups[highlightData].ShowOn.length == 0) {
+                    returnHighlight = true;
                 }
-                if(returnHighlight){groupsForUrl[highlightData]=inData.Groups[highlightData];}
+                if (returnHighlight) {
+                    groupsForUrl[highlightData] = inData.Groups[highlightData];
+                }
             }
         }
-    }
-    catch {
+    } catch {
         log('error in getting groups', inData, inUrl, inResults);
     }
     return groupsForUrl;
 }
-function getWords(inUrl){
 
-    groupsForUrl=getGroups(HighlightsData, inUrl,[]);
+function getWords(inUrl) {
 
-    var wordsForUrl={words:{},regex:{}};
+    groupsForUrl = getGroups(HighlightsData, inUrl, []);
+
+    var wordsForUrl = {
+        words: {},
+        regex: {}
+    };
 
     //now let's calculate the regex and worlist
-    wordsForUrl.words=transformWordsToWordList(groupsForUrl);
-    wordsForUrl.regex=transformWordsToRegex(wordsForUrl.words);
+    wordsForUrl.words = transformWordsToWordList(groupsForUrl);
+    wordsForUrl.regex = transformWordsToRegex(wordsForUrl.words);
     //alert(wordsForUrl.);
     return wordsForUrl;
 }
 
 
 
-function transformWordsToWordList(words){
-    var wordsArray=[];
-    var regexFindBackAgainstContent=/\(\?\=|\(\?\!|\(\?\<\=|\(\?\<\!/gi;
+function transformWordsToWordList(words) {
+    var wordsArray = [];
+    var regexFindBackAgainstContent = /\(\?\=|\(\?\!|\(\?\<\=|\(\?\<\!/gi;
 
     for (group in words) {
         if (words[group].Enabled) {
             for (word in words[group].Words) {
-                var findBackAgainstContent=false;
-                if( words[group].Words[word].trim()!==''){
-                    if(words[group].regexTokens){
-                        var regex=words[group].Words[word];
-                        if(words[group].Words[word].match(regexFindBackAgainstContent)){findBackAgainstContent=true;}
-                    }
-                    else{
-                        var regex=globStringToRegex(words[group].Words[word]);
+                var findBackAgainstContent = false;
+                if (words[group].Words[word].trim() !== '') {
+                    if (words[group].regexTokens) {
+                        var regex = words[group].Words[word];
+                        if (words[group].Words[word].match(regexFindBackAgainstContent)) {
+                            findBackAgainstContent = true;
+                        }
+                    } else {
+                        var regex = globStringToRegex(words[group].Words[word]);
                     }
 
-                    var action=words[group].action||{type:0};
+                    var action = words[group].action || {
+                        type: 0
+                    };
 
-                    wordsArray.push( {
+                    wordsArray.push({
                         "regex": regex,
                         "Color": words[group].Color,
                         "Fcolor": words[group].FColor,
@@ -133,7 +140,8 @@ function transformWordsToWordList(words){
     //alert(wordsArray);
     return wordsArray
 }
-function transformWordsToRegex(input){
+
+function transformWordsToRegex(input) {
     var words = "";
     var wordparts = "";
     var wordsEditable = "";
@@ -145,35 +153,34 @@ function transformWordsToRegex(input){
     var wordpartsEditableCS = "";
 
     //reverse sort the keys based on length
-    var sortedKeys = input.sort(function (a, b) {
+    var sortedKeys = input.sort(function(a, b) {
         return b.word.length - a.word.length;
     });
 
-    input.map(function(x){return x.word})
+    input.map(function(x) {
+        return x.word
+    })
 
     for (word in sortedKeys) {
         if (sortedKeys[word].FindWords) {
-            if(sortedKeys[word].caseSensitive){
+            if (sortedKeys[word].caseSensitive) {
                 wordsCS += sortedKeys[word].regex + "|";
                 if (sortedKeys[word].ShowInEditableFields) {
                     wordsEditableCS += sortedKeys[word].regex + "|";
                 }
-            }
-            else {
+            } else {
                 words += sortedKeys[word].regex + "|";
                 if (sortedKeys[word].ShowInEditableFields) {
                     wordsEditable += sortedKeys[word].regex + "|";
                 }
             }
-        }
-        else {
-            if(sortedKeys[word].caseSensitive){
+        } else {
+            if (sortedKeys[word].caseSensitive) {
                 wordpartsCS += sortedKeys[word].regex + "|";
                 if (sortedKeys[word].ShowInEditableFields) {
                     wordpartsEditableCS += sortedKeys[word].regex + "|";
                 }
-            }
-            else {
+            } else {
                 wordparts += sortedKeys[word].regex + "|";
                 if (sortedKeys[word].ShowInEditableFields) {
                     wordpartsEditable += sortedKeys[word].regex + "|";
@@ -249,36 +256,45 @@ function transformWordsToRegex(input){
         re += "(" + wordpartsEditableCS + ")";
     }
     matchRegexEditableCS = re;
-    var doMatchRegex=matchRegex.length>0;
-    var doMatchRegexCS=matchRegexCS.length>0;
-    var domatchRegexEditable=matchRegexEditable.length>0;
-    var domatchRegexEditableCS=matchRegexEditableCS.length>0;
+    var doMatchRegex = matchRegex.length > 0;
+    var doMatchRegexCS = matchRegexCS.length > 0;
+    var domatchRegexEditable = matchRegexEditable.length > 0;
+    var domatchRegexEditableCS = matchRegexEditableCS.length > 0;
 
-    return {matchRegex: matchRegex,matchRegexCS: matchRegexCS, matchRegexEditable: matchRegexEditable, matchRegexEditableCS: matchRegexEditableCS,doMatchRegex:doMatchRegex, doMatchRegexCS:doMatchRegexCS, domatchRegexEditable:domatchRegexEditable,domatchRegexEditableCS:domatchRegexEditableCS};
+    return {
+        matchRegex: matchRegex,
+        matchRegexCS: matchRegexCS,
+        matchRegexEditable: matchRegexEditable,
+        matchRegexEditableCS: matchRegexEditableCS,
+        doMatchRegex: doMatchRegex,
+        doMatchRegexCS: doMatchRegexCS,
+        domatchRegexEditable: domatchRegexEditable,
+        domatchRegexEditableCS: domatchRegexEditableCS
+    };
 }
 
 function globStringToRegex(str) {
-    str=str.replace(/[-[\]{}()*+?.,\\^$|]/g, "\\$&");
+    str = str.replace(/[-[\]{}()*+?.,\\^$|]/g, "\\$&");
     return preg_quote(str).replace(/\*/g, '\S*').replace(/\\\?/g, '.');
 }
 
-function preg_quote (str,delimiter) {
+function preg_quote(str, delimiter) {
     return (str + '').replace(new RegExp('/^.*[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\' + (delimiter || '') + '-].*$/', 'g'), '\\$&');
 }
 
-function getConfig(){
-        return {
-            highlightLoopFrequency: 500,
-            fixedLoopTime: false,
-            increaseLoop: 250,
-            decreaseLoop: 125,
-            maxLoopTime: 2500,
-            minLoopTime: 500,
-            highlightAtStart: true,
-            updateOnDomChange: true
-        };
+function getConfig() {
+    return {
+        highlightLoopFrequency: 500,
+        fixedLoopTime: false,
+        increaseLoop: 250,
+        decreaseLoop: 125,
+        maxLoopTime: 2500,
+        minLoopTime: 500,
+        highlightAtStart: true,
+        updateOnDomChange: true
+    };
 }
 
-function skipSelectorsForUrl(inUrl){
+function skipSelectorsForUrl(inUrl) {
     return skipSelectors.join(', ');
 }

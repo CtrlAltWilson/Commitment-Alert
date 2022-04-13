@@ -1,0 +1,233 @@
+body,
+html {
+    background-color: white;
+    overflow: scroll;
+}
+
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+    /* make scrollbar transparent */
+}
+
+body {
+    background-color: white;
+    border-radius: 10px;
+}
+
+.aligncenter {
+    text-align: center;
+}
+
+.collapsible {
+    background-color: white;
+    color: black;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 10px;
+}
+
+.active,
+.collapsible:hover {
+    background-color: #D6ECF3;
+}
+
+.content {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    background-color: #f1f1f1;
+    border-radius: 5px;
+}
+
+.separator {
+    text-align: center;
+}
+
+#textBox {
+    text-align: center;
+    border-color: #e4fdff;
+}
+
+input[type="text"] {
+    border: 1px solid #e5e5e5;
+    margin-top: 5px;
+    width: 70%;
+    height: 20px;
+    margin-bottom: 10px padding-left: 5px;
+}
+
+#Buttons {
+    text-align: center;
+
+}
+
+button[type="submit"],
+button[type="default"] {
+    background-color: #36eeff;
+    border: 1px solid #02cbdd;
+    opacity: 60%;
+    border-radius: 3px;
+    width: 28%;
+    height: 20px;
+    margin-bottom: 10px;
+    padding-left: 5px;
+    color: black;
+}
+
+button[type="submit"]:hover {
+    background-color: #e4fdff;
+}
+
+button[type="default"]:hover {
+    background-color: #ffcccb;
+}
+
+
+input[type="text"] {
+    background-color: white;
+    border-radius: 5px;
+    border-color: #36eeff;
+}
+
+.collapsible {
+    background-color: white;
+}
+
+.collapsible:hover {
+    background-color: #e4fdff;
+}
+
+.onoffswitch {
+    position: relative;
+    display: inline-block;
+}
+
+.onoffswitch-checkbox {
+    display: none;
+}
+
+.enabledDisabled-label {
+    display: block;
+    width: 48px;
+    height: 24px;
+    text-indent: -150%;
+    clip: rect(0 0 0 0);
+    color: transparent;
+    user-select: none;
+}
+
+.enabledDisabled-label::before,
+.enabledDisabled-label::after {
+    content: "";
+    display: block;
+    position: absolute;
+    cursor: pointer;
+}
+
+.enabledDisabled-label::before {
+    width: 100%;
+    height: 100%;
+    background-color: #dedede;
+    border-radius: 9999em;
+    -webkit-transition: background-color 0.25s ease;
+    transition: background-color 0.25s ease;
+}
+
+.enabledDisabled-label::after {
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
+    -webkit-transition: left 0.25s ease;
+    transition: left 0.25s ease;
+}
+
+.onoffswitch-checkbox:checked+.enabledDisabled-label::before {
+    background-color: #89c12d;
+}
+
+.onoffswitch-checkbox:checked+.enabledDisabled-label::after {
+    left: 24px;
+}
+
+.switch_centered {
+    text-align: center;
+}
+
+#link_settings {
+    display: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+#settings {
+    top: 0;
+    position: center;
+    text-align: center;
+}
+
+.setting_img {
+    width: 40px;
+    height: 40px;
+}
+
+.settings_frame {
+    text-align: center;
+}
+
+.CurrentLinkBox {
+    width: 215px;
+    background-color: #e4fdff;
+    border-radius: 7px;
+    margin: auto;
+    padding: 5px;
+}
+
+.Cur_Commit {
+    text-align: center;
+}
+
+.Chat_Cur_Commit {
+    text-align: center;
+}
+
+button[id="linkM"],
+button[id="chat_linkM"] {
+    color: yellow;
+    min-width: 25%;
+    max-width: 55%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    float: center;
+    margin: 0px 0px 0 50px;
+    background-color: #e4fdff;
+    border: 2px solid #e4fdff;
+}
+
+button[id="linkM"]:hover,
+button[id="chat_linkM"]:hover {
+    background-color: #36eeff;
+    border-radius: 5px;
+}
+
+button[type="x"] {
+    float: right;
+    margin: 0px 20px 0 0;
+    border: 2px solid #ffcccb;
+    background-color: #ffcccb;
+    border-radius: 5px;
+}
+
+button[type="x"]:hover {
+    background-color: red;
+    border: 2px solid red;
+}

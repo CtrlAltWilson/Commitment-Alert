@@ -3,19 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <title>Commitment Alerts</title>
+    <style>
+        .aligncenter {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-Paste Youtube or MP3 link here
+
+<p class="aligncenter">
+<img src="/icons/48x48.png" class="center"><br>
+</p>
+<p class="aligncenter">
+    <img src="/icons/title 230x32.png" class="center"><br>
+</p>
+
+
+
 <!--TEXTBOX INPUT FOR LINK SAVING-->
-<div id ="textBox">
-    <input type="text" id="YTlink" name="YTlink">
+<div id ="textBox"  style="text-align: center">
+    Set Alert Link:
+    <input type="text" id="YTlink" name="YTlink" placeholder="https://">
 </div>
-<div id="Buttons">
+&nbsp;
+<div id="Buttons" style="text-align: center">
     <button type="submit">Save</button>
+    <!--&nbsp; SPACING-->
+    &nbsp;&nbsp;&nbsp;
     <button type="default">Default</button>
 </div>
 
-<div class="onoffswitch">
+
+<div class="onoffswitch" style="text-align: center">
     Enabled:
     <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="enabledDisabled">
     <!---<label class="onoffswitch-label" for="enabledDisabled">
@@ -24,11 +43,13 @@ Paste Youtube or MP3 link here
     </label>-->
 </div>
 
-<script src="EnableDisable.js" charset="utf-8"></script>
+<script src="EnableDisable.js" charset="utf-8" ></script>
 
-____________________
-<p id="linkM"></p>
-<p id="Saved"></p>
+<div class="separator" style="text-align: center">
+    ____________________
+</div>
+<p id="linkM" style="text-align: center"></p>
+<p id="Saved" style="text-align: center"></p>
 
 
 <script src="popup.js" charset="utf-8"></script>

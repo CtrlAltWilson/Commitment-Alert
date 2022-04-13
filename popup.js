@@ -16,6 +16,15 @@ chrome.storage.sync.get(['mytext'], function(data) {
 });
 }
 
+function SavedLink(){
+    var strMessage1 = document.getElementById("Saved") ;
+
+    strMessage1.innerHTML = "Saved!";
+    setTimeout(function () {
+        strMessage1.innerHTML = "";
+    }, 1000);
+}
+
 ///////////////////
 CurrentLink();
 //////////////////
@@ -47,8 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             //show saved after save button is clicked
-            var strMessage1 = document.getElementById("Saved") ;
-            strMessage1.innerHTML = "Saved!";
+            SavedLink();
             CurrentLink();
         }
     }
@@ -61,8 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             //chrome.storage.sync.clear();
             chrome.storage.sync.set({ mytext: "" }, function() {})
-            var strMessage1 = document.getElementById("Saved") ;
-            strMessage1.innerHTML = "Saved!";
+            SavedLink();
             CurrentLink();
 
     }

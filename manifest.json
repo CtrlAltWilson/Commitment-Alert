@@ -1,0 +1,12 @@
+{
+ "name": "Commitment Alerts",
+ "version": "1.0",
+ "manifest_version": 2,
+ "content_scripts":  [
+  {
+   "matches": ["https://raptor--icagentconsole.na137.visual.force.com/*"],
+   //"matches": ["https://*.salesforce.com/*"],
+   "js": ["content.js"]
+  }
+ ]
+}

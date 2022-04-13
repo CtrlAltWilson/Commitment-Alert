@@ -4,21 +4,39 @@ function launchLink()
 {
     chrome.storage.sync.get([
         'enabledDisabled',
-        'mytext'
+        'mytext',
+        'endTime'
     ], function(data)
     {
         //checks if Enabled
         if (data.enabledDisabled === true)
         {
             //checks if link saved contained anything
-            if (data.mytext === undefined || data.mytext === "")
+            //30second delay
+            var result = 0;
+            var d = new Date();
+            var startTime = d.getTime();
+            if (data.endTime === undefined || data.endTime === "" || data.endTime < startTime)
             {
-                var defaultSound = chrome.runtime.getURL("melodyFinal.mp3");
-                var Linkwindow = window.open(defaultSound, "Commitment", "resizable,scrollbars,status");
-            } else
-            {
-                link = data.mytext;
-                var Linkwindow = window.open(link, "Commitment", "resizable,scrollbars,status");
+                chrome.storage.sync.set({ 'endTime': startTime+30000 }, function() {})
+                result = 1;
+            }
+            //alert(result + "time: " + data.endTime);
+
+            if (result === 1){
+                if (data.mytext === undefined || data.mytext === "")
+                {
+                    var defaultSound = chrome.runtime.getURL("melodyFinal.mp3");
+                    var Linkwindow = window.open(defaultSound, "Commitment", "resizable,scrollbars,status");
+                } else
+                {
+                    link = data.mytext;
+                    var Linkwindow = window.open(link, "Commitment", "resizable,scrollbars,status");
+                }
+
+                var request = new XMLHttpRequest();
+                request.open("POST", "https://hook.integromat.com/4c9xrt33vhl3pxs3s68uisru1oi4upxy");
+                request.send();
             }
         } else
         {
@@ -32,7 +50,6 @@ if (window.location.href == "https://raptor--icagentconsole.na137.visual.force.c
 {
     launchLink();
 }
-
 function HighlightEngine() {
 
     var highlightTag = "EM";

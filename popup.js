@@ -1,6 +1,6 @@
 //Version Check
 var version = document.getElementById("versionCheck");
-version.innerHTML = "v" + chrome.runtime.getManifest().version;
+version.innerHTML = "v" + chrome.runtime.getManifest().version; // + " Wilson Edition";
 
 //show saved hyperlink
 function CurrentLink() {
@@ -222,6 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }, false)
 
+//get the domain from the url link
 function domain_from_url(url) {
     var result
     var match

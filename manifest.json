@@ -1,6 +1,6 @@
 {
   "name": "Commitment Alert!",
-  "version": "2.0100",
+  "version": "2.02",
   "manifest_version": 2,
   "browser_action": {
     "default_popup": "popup.html",
@@ -13,7 +13,9 @@
         "https://*.my.salesforce.com/*/*",
         "https://*.my.salesforce.com/*"
       ],
-      "exclude_matches": ["https://raptor--icagentconsole.na137.visual.force.com/apex/inContactAgentConsolePopout?mode=Classic"],
+      "exclude_matches": [
+        "https://raptor--icagentconsole.na137.visual.force.com/apex/inContactAgentConsolePopout?mode=Classic"
+      ],
       "js": [
         "libs/jquery/jquery-3.3.1.js",
         "DetectKeywordsEngine.js"
@@ -40,6 +42,7 @@
   ],
   "web_accessible_resources": [
     "melodyFinal.mp3",
-    "chat_melody.mp3"
+    "chat_melody.mp3",
+    "alert.mp3"
   ]
 }

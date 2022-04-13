@@ -24,6 +24,7 @@ HighlightsData = ({
             //"Words":["Unavailable"]
             //"Words":["Case"]
             "Words": ["There is a chat contact waiting. Do you want to accept it"]
+            //"Words": ["Refuse"]
         }
     }
 });

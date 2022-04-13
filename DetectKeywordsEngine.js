@@ -49,7 +49,7 @@ function launchLink(route) //1 = commitment, 0 = chat
 }
 
 //for commitments
-if (window.location.href == "https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=Classic") {
+if ((window.location.href.indexOf("https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=") > -1)) {
     launchLink(1);
 }
 

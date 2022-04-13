@@ -253,40 +253,6 @@ chrome.storage.sync.get(['enabledDisabled'], function(data) {
     }
 })
 
-$(document).ready(function() {
-    Highlight = true;
-
-    debug && console.log('setup binding of dom sub tree modification');
-    if (Config.updateOnDomChange) {
-        //setup the mutationobjserver
-
-        // select the target node
-        var target = document.querySelector('body');
-
-        // create an observer instance
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                debug && console.log(mutation);
-            });
-            debug && (debugStats.subTreeModCount += 1);
-            Highlight = true;
-
-        });
-
-        // configuration of the observer:
-        var config = {
-            attributes: false,
-            childList: true,
-            characterData: true,
-            subtree: true
-        }
-
-        // pass in the target node, as well as the observer options
-        observer.observe(target, config);
-    }
-});
-
-
 function highlightLoop() {
 
     ReadyToFindWords = true;

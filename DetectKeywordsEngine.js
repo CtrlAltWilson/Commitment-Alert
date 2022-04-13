@@ -1,29 +1,37 @@
-  var link;
-  //var linkMessage = document.getElementById("video") ;
-  function launchLink(){
-  chrome.storage.sync.get(['enabledDisabled'], function(data) {
-      //checks if Enabled
-      if (data.enabledDisabled === true){
-            chrome.storage.sync.get(['mytext'], function(data) {
+var link;
+
+function launchLink()
+{
+    chrome.storage.sync.get([
+        'enabledDisabled',
+        'mytext'
+    ], function(data)
+    {
+        //checks if Enabled
+        if (data.enabledDisabled === true)
+        {
             //checks if link saved contained anything
-            if (data.mytext === undefined || data.mytext === ""){
-                 var Linkwindow = window.open("https://www.dropbox.com/s/snaf5vw6uvjzgjn/melodyFinal.mp3?raw=1", "Commitment", "resizable,scrollbars,status");
-            } else {
+            if (data.mytext === undefined || data.mytext === "")
+            {
+                var defaultSound = chrome.runtime.getURL("melodyFinal.mp3");
+                var Linkwindow = window.open(defaultSound, "Commitment", "resizable,scrollbars,status");
+            } else
+            {
                 link = data.mytext;
                 var Linkwindow = window.open(link, "Commitment", "resizable,scrollbars,status");
             }
-            });
-      } else {
-        //do nothing
-      }
-
-  });
-  }
-
-if (window.location.href == "https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=Classic"){
-    launchLink();
+        } else
+        {
+            //do nothing
+        }
+    });
 }
 
+//for commitments
+if (window.location.href == "https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=Classic")
+{
+    launchLink();
+}
 
 function HighlightEngine() {
 

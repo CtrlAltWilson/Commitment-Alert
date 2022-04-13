@@ -1,26 +1,35 @@
+//Version Check
+var version = document.getElementById("versionCheck");
+version.innerHTML =  "v" + chrome.runtime.getManifest().version;
+
 //show saved hyperlink
 function CurrentLink () {
-chrome.storage.sync.get(['mytext'], function(data) {
+    chrome.storage.sync.get(['mytext'], function(data)
+    {
+        var c = document.createElement('div');
+        var linkMessage = document.getElementById("linkM") ;
 
-    var c = document.createElement('div');
-    var linkMessage = document.getElementById("linkM") ;
+        if (data.mytext === undefined || data.mytext === "")
+        {
+            linkMessage.innerHTML = 'Current Link:' + "<br>" + "Default Sound";
+            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
 
-    if (data.mytext === undefined || data.mytext === ""){
+        } else
+            {
+            linkMessage.innerHTML = 'Current Link:' + "<br>" + data.mytext;
+            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
 
-        linkMessage.innerHTML = 'Current Link:' + "<br>" + "Default Sound";
-        //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-    } else {
-        linkMessage.innerHTML = 'Current Link:' + "<br>" + data.mytext;
-        //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-    }
-});
+        }
+    });
 }
 
-function SavedLink(){
+function SavedLink()
+{
     var strMessage1 = document.getElementById("Saved") ;
 
     strMessage1.innerHTML = "Saved!";
-    setTimeout(function () {
+    setTimeout(function ()
+    {
         strMessage1.innerHTML = "";
     }, 1000);
 }
@@ -30,28 +39,30 @@ CurrentLink();
 //////////////////
 
 //save button
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function ()
+{
     document.querySelector('button[type="submit"]').addEventListener('click', onclick, false)
-    function onclick () {
+    function onclick ()
+    {
 
         //grabs the value from the textbox
         var clickYT = document.getElementById("YTlink").value;
 
         //check to see if link entered is blank
-        if (clickYT.trim() === ""){
-
+        if (clickYT.trim() === "")
+        {
             var b = document.createElement('div');
 
             b.innerHTML = "Nothing was typed!";
             document.getElementsByTagName('body')[0].appendChild(b);  //<<< append the element to the pages body
-        } else {
 
+        } else
+        {
             var clickYTTRIM = clickYT.trim();
 
-            //chrome.storage.sync.clear();
-
             //setting link
-            chrome.storage.sync.set({ mytext: clickYTTRIM }, function(){
+            chrome.storage.sync.set({ mytext: clickYTTRIM }, function()
+            {
                 console.log('Value is set to ' + clickYTTRIM)
             });
 
@@ -63,15 +74,35 @@ document.addEventListener('DOMContentLoaded', function () {
 }, false)
 
 //default button
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function ()
+{
     document.querySelector('button[type="default"]').addEventListener('click', onclick, false)
-    function onclick () {
-
-            //chrome.storage.sync.clear();
-            chrome.storage.sync.set({ mytext: "" }, function() {})
-            SavedLink();
-            CurrentLink();
-
+    function onclick ()
+    {
+        //chrome.storage.sync.clear();
+        chrome.storage.sync.set({ mytext: "" }, function() {})
+        SavedLink();
+        CurrentLink();
     }
 }, false)
 
+
+//collapsible version button
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++)
+{
+    coll[i].addEventListener("click", function()
+    {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.display === "block")
+        {
+            content.style.display = "none";
+        } else
+        {
+            content.style.display = "block";
+        }
+    });
+}

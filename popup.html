@@ -1,57 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Commitment Alerts</title>
-    <style>
-        .aligncenter {
-            text-align: center;
-        }
+    <head>
+        <meta charset="UTF-8">
+        <title>Commitment Alerts</title>
+        <style>
+            .aligncenter
+            {
+                text-align: center;
+            }
 
-    </style>
-</head>
-<body>
+            .collapsible
+            {
+                background-color: white;
+                color: black;
+                cursor: pointer;
+                border: none;
+                text-align: left;
+                outline: none;
+                font-size: 10px;
+            }
 
-<p class="aligncenter">
-    <img src="/icons/48x48.png" class="center"><br>
-</p>
-<p class="aligncenter">
-    <img src="/icons/title 230x32.png" class="center"><br>
-</p>
+            .active, .collapsible:hover
+            {
+                background-color: #D6ECF3;
+            }
+
+            .content
+            {
+                padding: 0 18px;
+                display: none;
+                overflow: hidden;
+                background-color: #f1f1f1;
+            }
+
+        </style>
+    </head>
+    <body>
+
+        <p class="aligncenter">
+            <img src="/icons/48x48.png" class="center"><br>
+        </p>
+
+        <p class="aligncenter">
+            <img src="/icons/title 230x32.png" class="center"><br>
+        </p>
 
 
-<!--TEXTBOX INPUT FOR LINK SAVING-->
-<div id="textBox" style="text-align: center">
-    Set Alert Link:
-    <input type="text" id="YTlink" name="YTlink" placeholder="https://">
-</div>
-&nbsp;
-<div id="Buttons" style="text-align: center">
-    <button type="submit">Save</button>
-    <!--&nbsp; SPACING-->
-    &nbsp;&nbsp;&nbsp;
-    <button type="default">Default</button>
-</div>
+        <!--TEXTBOX INPUT FOR LINK SAVING-->
+        <div id="textBox" style="text-align: center">
+            Set Alert Link:
+            <input type="text" id="YTlink" name="YTlink" placeholder="https://">
+        </div>
 
+        &nbsp;
 
-<div class="onoffswitch" style="text-align: center">
-    Enabled:
-    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="enabledDisabled">
-</div>
+        <div id="Buttons" style="text-align: center">
+            <button type="submit">Save</button>
 
-<script src="EnableDisable.js" charset="utf-8"></script>
+            &nbsp;&nbsp;&nbsp;
 
-<div class="separator" style="text-align: center">
-    ____________________
-</div>
-<p id="linkM" style="text-align: center"></p>
-<p id="Saved" style="text-align: center"></p>
+            <button type="default">Default</button>
+        </div>
 
-<p style="text-align: center">
-    <!--VERSION-->
-</p>
+        <div class="onoffswitch" style="text-align: center">
+            Enabled:
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="enabledDisabled">
+        </div>
 
-<script src="popup.js" charset="utf-8"></script>
+        <div class="separator" style="text-align: center">
+            ____________________
+        </div>
 
-</body>
+        <p id="linkM" style="text-align: center"></p>
+        <p id="Saved" style="text-align: center"></p>
+
+        <p button type="button" class="collapsible" id="versionCheck" style="text-align: center"></p>
+        <div class="content">
+            <p>
+                Please have at least one window with Salesforce visible on screen else the chat alert will not work.<br><br>
+
+                Updates:<br><br>
+
+                -Fixed bug where extension would not be automatically enabled on first install.<br><br>
+                -Fixed bug where alert will appear as many times as the amount of Salesforce tabs that are opened.<br><br>
+                -Default sound is now a local resource.<br><br>
+                -Version is now implemented into pop up with notes.<br><br>
+                -Cleaned some code.
+            </p>
+        </div>
+
+        <script src="EnableDisable.js" charset="utf-8"></script>
+        <script src="popup.js" charset="utf-8"></script>
+
+    </body>
 </html>

@@ -1,43 +1,71 @@
 var highlighterEnabled = true;
 var debug= false;
 
-HighlightsData=({
-                	"Groups":{
-                		"chat test":{
-                			"Color":"",
-                			"Fcolor":"",
-                			"Enabled":true,
-                			"ShowOn":[],
-                			"DontShowOn":[],
-                			"FindWords":true,
-                			"Type":"local",
-                			"ShowInEditableFields":false,
-                			"NotifyOnHighlight":false,
-                			"NotifyFrequency":"1",
-                			"storage":"local",
-                			"regexTokens":false,
-                			"caseSensitive":false,
-                			//"Modified":1614282896021,
-                			"action":{
-                				"type":"1",
-                			},
-                			//"Words":["Available"]
-                			"Words":["There is a chat contact waiting. Do you want to accept it"]
-                		}
-                	}
-                });
-
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if(request.command=="getWords") {
-      sendResponse({words:getWords(request.url)});
+HighlightsData=(
+{
+    "Groups":
+    {
+        "chat test":
+        {
+            "Color":"",
+            "Fcolor":"",
+            "Enabled":true,
+            "ShowOn":[],
+            "DontShowOn":[],
+            "FindWords":true,
+            "Type":"local",
+            "ShowInEditableFields":false,
+            "NotifyOnHighlight":false,
+            "NotifyFrequency":"1",
+            "storage":"local",
+            "regexTokens":false,
+            "caseSensitive":false,
+            //"Modified":1614282896021,
+            "action":
+            {
+                "type":"1",
+            },
+            //"Words":["Available"]
+            "Words":["There is a chat contact waiting. Do you want to accept it"]
+        }
     }
-    if(request.command=="getStatus") {
-      sendResponse({status:highlighterEnabled, config:getConfig()});
-    }
-    return true;
 });
 
+chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse)
+    {
+        if(request.command=="getWords")
+        {
+            sendResponse({words:getWords(request.url)});
+        }
+        if(request.command=="getStatus")
+        {
+            sendResponse({status:highlighterEnabled, config:getConfig()});
+        }
+        return true;
+    }
+);
+
+//checks if installed
+function isInstalled()
+{
+chrome.storage.sync.get([
+    'firstInstall',
+    'enabledDisabled'
+    ], function(install)
+    {
+        if(install.firstInstall === false || install.firstInstall === null || install.firstInstall === undefined)
+        {
+            if(install.enabledDisabled === undefined || install.enabledDisabled === null)
+            {
+                chrome.storage.sync.set({ 'enabledDisabled': true }, function() {})
+                chrome.storage.sync.set({ 'firstInstall': true }, function() {})
+            }
+        }
+    });
+}
+
+isInstalled();
 
 function getGroups(inData, inUrl, inResults){
     var groupsForUrl=inResults;

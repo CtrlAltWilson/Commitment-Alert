@@ -1,6 +1,6 @@
 {
   "name": "Commitment Alert!",
-  "version": "1.89",
+  "version": "1.8902",
   "manifest_version": 2,
   "browser_action": {
     "default_popup": "popup.html",
@@ -34,7 +34,10 @@
   "description": "Pop up sound alerts for commitments",
   "permissions": [
     "storage",
-    "https://raptor--icagentconsole.na137.visual.force.com/*",
-    "https://raptor.my.salesforce.com/*"
+    "activeTab",
+    "https://raptor--icagentconsole.na137.visual.force.com/*"
+  ],
+  "web_accessible_resources": [
+    "melodyFinal.mp3"
   ]
 }

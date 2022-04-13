@@ -18,9 +18,6 @@ function EDCheck(){
             document.getElementById("enabledDisabled").checked = false;
             //codeword = " it is set to off";
         }
-        //var b = document.createElement('div');
-        //b.innerHTML = data.enabledDisabled + codeword;
-        //document.getElementsByTagName('body')[0].appendChild(b);  //<<< append the element to the pages body
     });
 }
 
@@ -36,15 +33,9 @@ document.addEventListener('DOMContentLoaded', function () {
     checkbox.addEventListener('change', function(){
 
     if (this.checked){
-        //var b = document.createElement('div');
-        //b.innerHTML = "ITS ON";
-        //document.getElementsByTagName('body')[0].appendChild(b);  //<<< append the element to the pages body
         chrome.storage.sync.set({ 'enabledDisabled': true }, function() {})
 
      } else{
-         //var b = document.createElement('div');
-         //b.innerHTML = "ITS OFF";
-         //document.getElementsByTagName('body')[0].appendChild(b);  //<<< append the element to the pages body
          chrome.storage.sync.set({ 'enabledDisabled': false }, function() {})
      }
 

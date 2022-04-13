@@ -3,13 +3,15 @@ function CurrentLink () {
 chrome.storage.sync.get(['mytext'], function(data) {
 
     var c = document.createElement('div');
+    var linkMessage = document.getElementById("linkM") ;
 
     if (data.mytext === undefined || data.mytext === ""){
-        c.innerHTML = 'Current Link:' + "<br>" + "Default Sound";
-        document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
+
+        linkMessage.innerHTML = 'Current Link:' + "<br>" + "Default Sound";
+        //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
     } else {
-        c.innerHTML = 'Current Link:' + "<br>" + data.mytext;
-        document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
+        linkMessage.innerHTML = 'Current Link:' + "<br>" + data.mytext;
+        //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
     }
 });
 }
@@ -37,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var clickYTTRIM = clickYT.trim();
 
-            chrome.storage.sync.clear();
+            //chrome.storage.sync.clear();
 
             //setting link
             chrome.storage.sync.set({ mytext: clickYTTRIM }, function(){
@@ -45,9 +47,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             //show saved after save button is clicked
-            var b = document.createElement('div');
-            b.innerHTML = "Saved!";
-            document.getElementsByTagName('body')[0].appendChild(b);  //<<< append the element to the pages body
+            var strMessage1 = document.getElementById("Saved") ;
+            strMessage1.innerHTML = "Saved!";
             CurrentLink();
         }
     }
@@ -58,11 +59,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('button[type="default"]').addEventListener('click', onclick, false)
     function onclick () {
 
-            chrome.storage.sync.clear();
+            //chrome.storage.sync.clear();
+            chrome.storage.sync.set({ mytext: "" }, function() {})
+            var strMessage1 = document.getElementById("Saved") ;
+            strMessage1.innerHTML = "Saved!";
+            CurrentLink();
 
-            var b = document.createElement('div');
-
-            b.innerHTML = "Saved!";
-            document.getElementsByTagName('body')[0].appendChild(b);  //<<< append the element to the pages body
     }
 }, false)

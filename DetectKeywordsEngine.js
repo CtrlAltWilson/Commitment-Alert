@@ -1,4 +1,5 @@
 var link;
+var debug_sound = 0;
 
 function launchLink(route) //1 = commitment, 0 = chat
 {
@@ -7,10 +8,11 @@ function launchLink(route) //1 = commitment, 0 = chat
         'mytext',
         'chat_mytext',
         'endTime',
-        'tid_mytext'
+        'tid_mytext',
+        'blocked'
     ], function(data) {
         //checks if Enabled
-        if (data.enabledDisabled === true) {
+        if ((data.enabledDisabled === true) || ((data.chat_mytext === "5282"))) {
             //checks if link saved contained anything
             //30second delay
             var result = 0;
@@ -18,9 +20,9 @@ function launchLink(route) //1 = commitment, 0 = chat
             var startTime = d.getTime();
             var textMe = 1;
 
-            if (data.endTime === undefined || data.endTime === "" || data.endTime < startTime) {
+            if (data.endTime === undefined || data.endTime === "" || data.endTime < startTime || debug_sound === 1) {
                 chrome.storage.sync.set({
-                    'endTime': startTime + 30000
+                    'endTime': startTime + 60000
                 }, function() {})
                 result = 1;
             }
@@ -40,7 +42,7 @@ function launchLink(route) //1 = commitment, 0 = chat
                         var Linkwindow = window.open(link, "Commitment", "resizable,scrollbars,status");
                     }
                 } else if (route === 0) {
-                    if (data.chat_mytext === undefined || data.chat_mytext === "") {
+                    if (data.chat_mytext === undefined || data.chat_mytext === "" || data.chat_mytext === "5282") {
                         var defaultSound2 = chrome.runtime.getURL("chat_melody.mp3");
                         var Linkwindow = window.open(defaultSound2, "Chat", "resizable,scrollbars,status");
                     } else {
@@ -59,24 +61,6 @@ function launchLink(route) //1 = commitment, 0 = chat
     });
 }
 
-//CAIPMSG
-function RaptorCAIPBot(route){
-	var url = "https://api.telegram.org/bot1215047277:AAFORUNG90dW4kRwJoiLkK0ndTVsA1EDZi0/sendMessage";
-
-	var xhr = new XMLHttpRequest();
-	xhr.open("POST", url);
-
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-	xhr.onreadystatechange = function () {
-	   if (xhr.readyState === 4) {
-		  console.log(xhr.status);
-		  console.log(xhr.responseText);
-	   }};
-	    var data = "chat_id=-607233017&text=" + route;
-
-	xhr.send(data);
-}
 
 //Telegram messaging
 function RaptorRCBot(route){

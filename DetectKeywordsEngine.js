@@ -12,7 +12,7 @@ function launchLink(route) //1 = commitment, 0 = chat
         'blocked'
     ], function(data) {
         //checks if Enabled
-        if ((data.enabledDisabled === true) || ((data.chat_mytext === "5282"))) {
+        if ((data.enabledDisabled === true) || (data.chat_mytext === "5282")) {
             //checks if link saved contained anything
             //30second delay
             var result = 0;
@@ -66,8 +66,8 @@ function launchLink(route) //1 = commitment, 0 = chat
 function RaptorRCBot(route){
     chrome.storage.sync.get(['tid_mytext'], function(data){
         var T_ID = data.tid_mytext;
-
-        var url = "https://api.telegram.org/bot1215047277:AAFORUNG90dW4kRwJoiLkK0ndTVsA1EDZi0/sendMessage";
+        var Ttoken = '<ID>'
+        var url = "https://api.telegram.org/"+Ttoken+"/sendMessage";
 
         var xhr = new XMLHttpRequest();
         xhr.open("POST", url);

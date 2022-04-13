@@ -16,6 +16,7 @@ function launchLink()
             var result = 0;
             var d = new Date();
             var startTime = d.getTime();
+
             if (data.endTime === undefined || data.endTime === "" || data.endTime < startTime)
             {
                 chrome.storage.sync.set({ 'endTime': startTime+30000 }, function() {})

@@ -1,226 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Commitment Alerts</title>
-
-    <link rel="stylesheet" type="text/css" href="assets/css/style.css">
-    <script src="libs/jquery/jquery-3.3.1.js"></script>
-</head>
-
-<body>
-
-<p class="aligncenter">
-    <a title="Reopen Commitment Box (If there is one active)" href="https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=Classic" target="_blank"><img src="/icons/48x48.png" class="center"></a>
-    <br>
-</p>
-
-<p class="aligncenter">
-    <img src="/icons/title 230x32.png" class="center"><br>
-</p>
-
-
-
-<br>
-<div class="switch_centered">
-    <div class="onoffswitch">
-        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="enabledDisabled">
-        <label for="enabledDisabled" class="enabledDisabled-label">
-            Switch
-        </label>
-    </div>
-</div>
-<br>
-<div class="separator">
-    ____________________
-</div>
-<br>
-
-
-
-<div class="settings_frame">
-
-    <a href="#" id="settings" class="settings"><img class="setting_img" src="assets/images/settings.png"></a>
-</div>
-<div id="link_settings">
-    <!--TEXTBOX INPUT FOR LINK SAVING-->
-
-    <div class="CurrentLinkBox">
-        <br>
-        <div class="Cur_Commit">
-            <b>Current Commitment Alert:</b>
+   <head>
+      <meta charset="UTF-8">
+      <title>Commitment Alerts</title>
+      <link rel="stylesheet" type="text/css" href="assets/css/style.css">
+      <script src="libs/jquery/jquery-3.3.1.js"></script>
+   </head>
+   <body>
+      <p class="aligncenter"> <a title="Reopen Commitment Box (If there is one active)" href="https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=Classic" target="_blank"><img src="/icons/48x48.png" class="center"></a> <br></p>
+      <p class="aligncenter"> <img src="/icons/title 230x32.png" class="center"><br></p>
+      <br>
+      <div class="switch_centered">
+         <div class="onoffswitch"> <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="enabledDisabled"> <label for="enabledDisabled" class="enabledDisabled-label"> Switch </label> </div>
+      </div>
+      <br>
+      <div class="separator"> ____________________</div>
+      <br>
+      <div class="settings_frame"> <a href="#" id="settings" class="settings"><img class="setting_img" src="assets/images/settings.png"></a></div>
+      <div id="link_settings">
+         <div class="CurrentLinkBox">
             <br>
-            <button id="linkM"></button>
-            <button type="x" class="x" id="x">x</button>
+            <div class="Cur_Commit"> <b>Current Commitment Alert:</b> <br><button id="linkM"></button> <button type="x" class="x" id="x">x</button> <br></div>
             <br>
-        </div>
-        <br>
-        <div class="Chat_Cur_Commit">
-            <b>Current Chat Alert:</b>
+            <div class="Chat_Cur_Commit"> <b>Current Chat Alert:</b> <br><button id="chat_linkM"></button> <button type="x" class="chat_x" id="chat_x">x</button> <br></div>
             <br>
-            <button id="chat_linkM"></button>
-            <button type="x" class="chat_x" id="chat_x">x</button>
+            <div class="Tele_ID"> <b>Telegram ID:</b> <br><button id="tele_idM"></button> <button type="x" class="t_x" id="t_x">x</button> <br></div>
             <br>
-        </div>
-        <br>
-        <div class="Tele_ID">
-            <b>Telegram ID:</b>
-            <br>
-            <button id="tele_idM"></button>
-            <button type="x" class="t_x" id="t_x">x</button>
-            <br>
-        </div>
-        <br>
-    </div>
-    <div id="textBox">
-        Commitment Alert Link:
-        <br>
-        <input type="text" id="YTlink" name="YTlink" placeholder="https://">
-        <br>
-        <br>
-        Chat Alert Link:
-        <br>
-        <input type="text" id="Chat_YTlink" name="Chat_YTlink" placeholder="https://">
-        <br>
-        <br>
-        Telegram ID:
-        <br>
-        <input type="text" id="TeleID" name="TeleID" placeholder=""><br>
-        <small><u><a href="https://wilsonngo.com/kb/commitment_alerts/telegram_alert.html" target="_blank">How to setup Telegram alerts</a></u></small>
-    </div>
-
-    &nbsp;
-
-    <div id="Buttons">
-        <button type="submit">Save</button>
-
-        &nbsp;&nbsp;&nbsp;
-
-        <button type="default">Reset</button>
-    </div>
-</div>
-<p id="Saved" style="text-align: center"></p>
-<p button type="button" class="collapsible" id="versionCheck" style="text-align: center"></p>
-<div class="content">
-    <a>
-        <br>
-        <b>
-            Note:
-        </b>
-        <br>
-        Please have at least one window with Salesforce visible on screen else the chat alert will not work.
-        <br><br>
-        <b>
-            Updates:
-        </b>
-        <br>
-        <b>
-            v2.0500
-        </b>
-        <br>
-        -Minor updates
-        <br><br>
-        <b>
-            v2.0400
-        </b>
-        <br>
-        -Minor updates
-        <br><br>
-        <b>
-            v2.0300
-        </b>
-        <br>
-        -Alerts can now be sent to Telegram!
-        <br><br>
-        -Optimized code
-        <br><br>
-        -Removed scrollbar so it doesn't adjust the size of the window
-        <br><br>
-        -Improved expansion when clicking on settings or version
-        <br><br>
-        <b>
-            v2.0200
-        </b>
-        <br>
-        -Logo now links to commitment in case if commitment box disappears
-        <br><br>
-        -Now compatible with Lightning edition of Salesforce (with some limitations)
-        <br><br>
-        -Bug fixes
-        <br><br>
-        <b>
-            v2.0100
-        </b>
-        <br>
-        -Bug fixes
-        <br><br>
-        <b>
-            v2.0000
-        </b>
-        <br>
-        -UI make over!
-        <br><br>
-        -You can now have a separate alert link for your chat pop ups
-        <br><br>
-        -New default sound for chat
-        <br><br>
-        <b>
-            v1.9001
-        </b>
-        <br>
-        -Minor bug fixes
-        <br><br>
-        <b>
-            v1.9000 It's over 9000!
-        </b>
-        <br>
-        -Fixed multiple windows from loading up due to opened tabs and delayed it by 30 seconds
-        <br><br>
-        -Minor bug fixes
-        <br><br>
-        <b>
-            v1.8904
-        </b>
-        <br>
-        -Inserted plug
-        <br><br>
-        -Minor bug fixes
-        <br><br>
-        <b>
-            v1.8903
-        </b>
-        <br>
-        -Fixed bug where pop up appears for both chat box and Salesforce
-        <br><br>
-        <b>
-            v1.8902
-        </b>
-        <br>
-        -Fixed bug where extension would not be automatically enabled on first install.
-        <br><br>
-        -Fixed bug where alert will appear as many times as the amount of Salesforce tabs that are opened.
-        <br><br>
-        -Default sound is now a local resource.
-        <br><br>
-        -Version is now implemented into pop up with notes.
-        <br><br>
-        -Cleaned some code.
-        <br><br><br>
-        <small>
-            <p style="text-align: center">
-                <a href="http://www.wilsonngo.com" target="_blank">
-                    Designed and developed by Wilson
-                </a>
-            </p>
-            <p id="gfg" style="text-align: center"></p>
-        </small>
-    </a>
-</div>
-
-<script src="EnableDisable.js" charset="utf-8"></script>
-<script src="popup.js" charset="utf-8"></script>
-
-</body>
-
+         </div>
+         <div id="textBox"> Commitment Alert Link: <br><input type="text" id="YTlink" name="YTlink" placeholder="https://"> <br><br>Chat Alert Link: <br><input type="text" id="Chat_YTlink" name="Chat_YTlink" placeholder="https://"> <br><br>Telegram ID: <br><input type="text" id="TeleID" name="TeleID" placeholder=""><br><small><u><a href="https://wilsonngo.com/kb/commitment_alerts/telegram_alert.html" target="_blank">How to setup Telegram alerts</a></u></small> </div>
+         &nbsp; 
+         <div id="Buttons"> <button type="submit">Save</button> &nbsp;&nbsp;&nbsp; <button type="default">Reset</button> </div>
+      </div>
+      <p id="Saved" style="text-align: center"></p>
+      <p button type="button" class="collapsible" id="versionCheck" style="text-align: center"></p>
+      <div class="content">
+         <a>
+            <br><b> Note: </b> <br>Please have at least one window with Salesforce visible on screen else the chat alert will not work. <br><br><b> Updates: </b> <br>
+            <div class="update"></div>
+            <small>
+               <p style="text-align: center"> 
+         <a href="http://www.wilsonngo.com" target="_blank"> Designed and developed by Wilson </a> </p><p id="gfg" style="text-align: center"></p></small> </a>
+      </div>
+      <script src="EnableDisable.js" charset="utf-8"></script><script src="popup.js" charset="utf-8"></script><script src="updatelog.js" charset="utf-8"></script>
+   </body>
 </html>

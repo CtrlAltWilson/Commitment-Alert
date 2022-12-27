@@ -1,283 +1,130 @@
-//Version Check
 var version = document.getElementById("versionCheck");
-version.innerHTML = "v" + chrome.runtime.getManifest().version; // + " Wilson Edition";
 
-//show saved hyperlink
 function CurrentLink() {
-    chrome.storage.sync.get(['mytext', 'chat_mytext', 'tid_mytext'], function(data) {
-        eraseText(); //clears out textbox
-
-        //COMMITMENT
-        var linkMessage = document.getElementById("linkM");
-
-        if (data.mytext === undefined || data.mytext === "") {
-            linkMessage.innerHTML = "<a href=\"" + chrome.runtime.getURL("melodyFinal.mp3") + "\" target=\"_blank\" style=\"color: #696969;\"> Default Sound </a>";
-            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-            $('#x').hide();
-            document.getElementById("linkM").style.margin = "0px 50px 0 50px";
-        } else {
-            var stripped_link = domain_from_url(data.mytext);
-            linkMessage.innerHTML = "<a href=\"" + data.mytext + "\" target=\"_blank\" style=\"color: #696969;\">" + stripped_link + "</a>";
-            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-            $('#x').show();
-            document.getElementById("linkM").style.margin = "0px 0px 0 50px";
+    chrome.storage.sync.get(["mytext", "chat_mytext", "tid_mytext"], (function(e) {
+        eraseText();
+        var t = document.getElementById("linkM");
+        if (void 0 === e.mytext || "" === e.mytext) t.innerHTML = '<a href="' + chrome.runtime.getURL("melodyFinal.mp3") + '" target="_blank" style="color: #696969;"> Default Sound </a>', $("#x").hide(), document.getElementById("linkM").style.margin = "0px 50px 0 50px";
+        else {
+            var n = domain_from_url(e.mytext);
+            t.innerHTML = '<a href="' + e.mytext + '" target="_blank" style="color: #696969;">' + n + "</a>", $("#x").show(), document.getElementById("linkM").style.margin = "0px 0px 0 50px"
         }
-
-        //CHAT
-        var chat_linkMessage = document.getElementById("chat_linkM");
-
-        if (data.chat_mytext === undefined || data.chat_mytext === "") {
-            chat_linkMessage.innerHTML = "<a href=\"" + chrome.runtime.getURL("chat_melody.mp3") + "\" target=\"_blank\" style=\"color: #696969;\"> Default Sound </a>";
-            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-            $('#chat_x').hide();
-            document.getElementById("chat_linkM").style.margin = "0px 50px 0 50px";
-        } else {
-            var stripped_chat_link = domain_from_url(data.chat_mytext);
-            chat_linkMessage.innerHTML = "<a href=\"" + data.chat_mytext + "\" target=\"_blank\" style=\"color: #696969;\">" + stripped_chat_link + "</a>";
-            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-            $('#chat_x').show();
-            document.getElementById("chat_linkM").style.margin = "0px 0px 0 50px";
+        var i = document.getElementById("chat_linkM");
+        if (void 0 === e.chat_mytext || "" === e.chat_mytext) i.innerHTML = '<a href="' + chrome.runtime.getURL("chat_melody.mp3") + '" target="_blank" style="color: #696969;"> Default Sound </a>', $("#chat_x").hide(), document.getElementById("chat_linkM").style.margin = "0px 50px 0 50px";
+        else {
+            var o = domain_from_url(e.chat_mytext);
+            i.innerHTML = '<a href="' + e.chat_mytext + '" target="_blank" style="color: #696969;">' + o + "</a>", $("#chat_x").show(), document.getElementById("chat_linkM").style.margin = "0px 0px 0 50px"
         }
-
-        //TELEGRAM
-        var tele_idMessage = document.getElementById("tele_idM");
-
-        if (data.tid_mytext === undefined || data.tid_mytext === "") {
-            //tele_idMessage.innerHTML = "---";
-            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-            $('.Tele_ID').hide();
-            $('#t_x').hide();
-            document.getElementById("tele_idM").style.margin = "0px 50px 0 50px";
-        } else {
-            $('.Tele_ID').show();
-            $('#t_x').show();
-            tele_idMessage.innerHTML = "<a style=\"color: #696969;\">" + data.tid_mytext + "</a>";
-            //document.getElementsByTagName('body')[0].appendChild(c);  //<<< append the element to the pages body
-            document.getElementById("tele_idM").style.margin = "0px 0px 0 50px";
-        }
-    });
+        var c = document.getElementById("tele_idM");
+        void 0 === e.tid_mytext || "" === e.tid_mytext ? ($(".Tele_ID").hide(), $("#t_x").hide(), document.getElementById("tele_idM").style.margin = "0px 50px 0 50px") : ($(".Tele_ID").show(), $("#t_x").show(), c.innerHTML = '<a style="color: #696969;">' + e.tid_mytext + "</a>", document.getElementById("tele_idM").style.margin = "0px 0px 0 50px")
+    }))
 }
 
 function SavedLink() {
-    var strMessage1 = document.getElementById("Saved");
-
-    strMessage1.innerHTML = "Saved!";
-    setTimeout(function() {
-        strMessage1.innerHTML = "";
-    }, 1000);
+    var e = document.getElementById("Saved");
+    e.innerHTML = "Saved!", setTimeout((function() {
+        e.innerHTML = ""
+    }), 1e3)
 }
-
-///////////////////
-CurrentLink();
-//////////////////
-
-//save button
-//this can be optimized
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('button[type="submit"]').addEventListener('click', onclick, false)
-
-    function onclick() {
-
-        //grabs the value from the textbox
-        var clickYT = document.getElementById("YTlink").value;
-        var chat_clickYT = document.getElementById("Chat_YTlink").value;
-        var tele_click = document.getElementById("TeleID").value;
-        var isSuccess = 0;
-        //check to see if link entered is blank
-        if (clickYT.trim() === "" && chat_clickYT.trim() === "" && tele_click.trim() === "") {
-            //var b = document.createElement('div');
-            var b = document.getElementById("Saved");
-
-            b.innerHTML = "Nothing was typed!";
-            document.getElementsByTagName('body')[0].appendChild(b); //<<< append the element to the pages body
-            setTimeout(function() {
-                b.innerHTML = "";
-            }, 1000);
-
+version.innerHTML = "v" + chrome.runtime.getManifest().version, CurrentLink(), document.addEventListener("DOMContentLoaded", (function() {
+    document.querySelector('button[type="submit"]').addEventListener("click", (function() {
+        var e = document.getElementById("YTlink").value,
+            t = document.getElementById("Chat_YTlink").value,
+            n = document.getElementById("TeleID").value,
+            i = 0;
+        if ("" === e.trim() && "" === t.trim() && "" === n.trim()) {
+            (r = document.getElementById("Saved")).innerHTML = "Nothing was typed!", document.getElementsByTagName("body")[0].appendChild(r), setTimeout((function() {
+                r.innerHTML = ""
+            }), 1e3)
         }
-        if (clickYT.trim() != ""){
-            var clickYTTRIM = clickYT.trim();
-
-            //setting link
+        if ("" != e.trim()) {
+            var o = e.trim();
             chrome.storage.sync.set({
-                mytext: clickYTTRIM
-            }, function() {
-                console.log('Value is set to ' + clickYTTRIM);
-            });
-
-            isSuccess = 1;
+                mytext: o
+            }, (function() {
+                console.log("Value is set to " + o)
+            })), i = 1
         }
-        if (chat_clickYT.trim() != ""){
-            var chat_clickYTTRIM = chat_clickYT.trim();
-
-            //Chat setting link
+        if ("" != t.trim()) {
+            var c = t.trim();
             chrome.storage.sync.set({
-                chat_mytext: chat_clickYTTRIM
-            }, function() {
-                console.log('Chat value is set to ' + chat_clickYTTRIM);
-            });
-
-            isSuccess = 1;
+                chat_mytext: c
+            }, (function() {
+                console.log("Chat value is set to " + c)
+            })), i = 1
         }
-        if(tele_click.trim() != "" && tele_click.trim().match(/^[0-9]+$/) != null){
-            var tele_clickTRIM = tele_click.trim();
-
+        if ("" != n.trim() && null != n.trim().match(/^[0-9]+$/)) {
+            var a = n.trim();
             chrome.storage.sync.set({
-                tid_mytext: tele_clickTRIM
-            }, function() {
-                console.log('Telegram ID value is set to ' + tele_clickTRIM);
-            });
-
-            isSuccess = 1;
+                tid_mytext: a
+            }, (function() {
+                console.log("Telegram ID value is set to " + a)
+            })), i = 1
         }
-        if (tele_click.trim().match(/^[0-9]+$/) == null){
-            var b = document.getElementById("Saved");
-
-            b.innerHTML = "Telegram ID can only be in numbers!";
-            document.getElementsByTagName('body')[0].appendChild(b); //<<< append the element to the pages body
-            setTimeout(function() {
-                b.innerHTML = "";
-            }, 3000);
+        if (null == n.trim().match(/^[0-9]+$/)) {
+            var r;
+            (r = document.getElementById("Saved")).innerHTML = "Telegram ID can only be in numbers!", document.getElementsByTagName("body")[0].appendChild(r), setTimeout((function() {
+                r.innerHTML = ""
+            }), 3e3)
         }
-
-        if (isSuccess) {
-            SavedLink();
-            CurrentLink();
-        }
-    }
-}, false)
-
-//default button
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('button[type="default"]').addEventListener('click', onclick, false)
-
-    function onclick() {
-        //chrome.storage.sync.clear();
+        i && (SavedLink(), CurrentLink())
+    }), !1)
+}), !1), document.addEventListener("DOMContentLoaded", (function() {
+    document.querySelector('button[type="default"]').addEventListener("click", (function() {
         chrome.storage.sync.set({
             mytext: ""
-        }, function() {})
-        chrome.storage.sync.set({
+        }, (function() {})), chrome.storage.sync.set({
             chat_mytext: ""
-        }, function() {})
-        chrome.storage.sync.set({
+        }, (function() {})), chrome.storage.sync.set({
             tid_mytext: ""
-        }, function() {})
-        SavedLink();
-        CurrentLink();
-    }
-}, false)
-
-
-//collapsible version button
-var coll = document.getElementsByClassName("collapsible");
-var i;
-
-for (i = 0; i < coll.length; i++) {
-    coll[i].addEventListener("click", function() {
-        this.classList.toggle("active");
-        var content = this.nextElementSibling;
-        if (content.style.display === "block") {
-            //content.style.display = "none";
-            $(".content").slideUp();
-        } else {
-            //content.style.display = "block";
-            $(".content").slideDown();
-        }
-    });
-}
-
-
-document.addEventListener('DOMContentLoaded', function() {
-    var links = document.getElementsByTagName("plug");
-    for (var i = 0; i < links.length; i++) {
-        (function() {
-            var ln = links[i];
-            var location = ln.href;
-            ln.onclick = function() {
-                chrome.tabs.create({
-                    active: true,
-                    url: location
-                });
-            };
-        })();
-    }
-});
-
-//Link settings
-$(document).ready(function() {
-    var showSettings = 1;
-    //On click for Link Settings
-    $("#settings").click(function() {
-        if (showSettings === 1) {
-            $(".aligncenter").slideUp();
-            $("#link_settings").slideDown();
-            showSettings = 0;
-        } else {
-            $(".aligncenter").slideDown();
-            $("#link_settings").slideUp();
-            showSettings = 1;
-        }
-    });
-});
+        }, (function() {})), SavedLink(), CurrentLink()
+    }), !1)
+}), !1);
+var i, coll = document.getElementsByClassName("collapsible");
+for (i = 0; i < coll.length; i++) coll[i].addEventListener("click", (function() {
+    this.classList.toggle("active"), "block" === this.nextElementSibling.style.display ? $(".content").slideUp() : $(".content").slideDown()
+}));
 
 function eraseText() {
-    document.getElementById("YTlink").value = "";
-    document.getElementById("Chat_YTlink").value = "";
-    document.getElementById("TeleID").value="";
+    document.getElementById("YTlink").value = "", document.getElementById("Chat_YTlink").value = "", document.getElementById("TeleID").value = ""
 }
 
-//x button
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('button[class="x"]').addEventListener('click', onclick, false)
-
-    function onclick() {
-        //chrome.storage.sync.clear();
+function domain_from_url(e) {
+    var t, n;
+    return (n = e.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im)) && (n = (t = n[1]).match(/^[^\.]+\.(.+\..+)$/)) && (t = n[1]), t
+}
+document.addEventListener("DOMContentLoaded", (function() {
+    for (var e = document.getElementsByTagName("plug"), t = 0; t < e.length; t++) ! function() {
+        var n = e[t],
+            i = n.href;
+        n.onclick = function() {
+            chrome.tabs.create({
+                active: !0,
+                url: i
+            })
+        }
+    }()
+})), $(document).ready((function() {
+    var e = 1;
+    $("#settings").click((function() {
+        1 === e ? ($(".aligncenter").slideUp(), $("#link_settings").slideDown(), e = 0) : ($(".aligncenter").slideDown(), $("#link_settings").slideUp(), e = 1)
+    }))
+})), document.addEventListener("DOMContentLoaded", (function() {
+    document.querySelector('button[class="x"]').addEventListener("click", (function() {
         chrome.storage.sync.set({
             mytext: ""
-        }, function() {})
-        SavedLink();
-        CurrentLink();
-    }
-}, false)
-
-//chat x button
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('button[class="chat_x"]').addEventListener('click', onclick, false)
-
-    function onclick() {
-        //chrome.storage.sync.clear();
+        }, (function() {})), SavedLink(), CurrentLink()
+    }), !1)
+}), !1), document.addEventListener("DOMContentLoaded", (function() {
+    document.querySelector('button[class="chat_x"]').addEventListener("click", (function() {
         chrome.storage.sync.set({
             chat_mytext: ""
-        }, function() {})
-        SavedLink();
-        CurrentLink();
-    }
-}, false)
-
-//teleID x button
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('button[class="t_x"]').addEventListener('click', onclick, false)
-
-    function onclick() {
-        //chrome.storage.sync.clear();
+        }, (function() {})), SavedLink(), CurrentLink()
+    }), !1)
+}), !1), document.addEventListener("DOMContentLoaded", (function() {
+    document.querySelector('button[class="t_x"]').addEventListener("click", (function() {
         chrome.storage.sync.set({
             tid_mytext: ""
-        }, function() {})
-        SavedLink();
-        CurrentLink();
-    }
-}, false)
-
-
-//get the domain from the url link
-function domain_from_url(url) {
-    var result
-    var match
-    if (match = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im)) {
-        result = match[1]
-        if (match = result.match(/^[^\.]+\.(.+\..+)$/)) {
-            result = match[1]
-        }
-    }
-    return result
-}
+        }, (function() {})), SavedLink(), CurrentLink()
+    }), !1)
+}), !1);

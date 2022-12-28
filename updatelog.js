@@ -1,5 +1,6 @@
-var ext_version = ["v2.0600", "v2.0500", "v2.0400", "v2.0300", "v2.0200", "v2.0100", "v2.0000", "v1.9001", "v1.9000 It's over 9000!", "v1.8904", "v1.8903", "v1.8902"],
+var ext_version = ["v2.0700","v2.0600", "v2.0500", "v2.0400", "v2.0300", "v2.0200", "v2.0100", "v2.0000", "v1.9001", "v1.9000 It's over 9000!", "v1.8904", "v1.8903", "v1.8902"],
     ext_updatenotes = [
+        ["Minor bug fixes","Fixed auto-enable on first install"],
         ["Updated to manifest v3", "Fixed url detection issue", "Revamped update logs", "Optimized code"],
         ["Minor updates"],
         ["Minor updates"],

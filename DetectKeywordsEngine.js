@@ -92,7 +92,7 @@ function RaptorCAIPBot(e) {
     t.send(o)
     try{
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', `${API_URL}/token?api_key=2a574a383aef752319952d95f7cf8a82200172f2d808144c743e9f8b22e24199`, true);
+        xhr.open('GET', `${API_URL}/token?api_key=2a574a383aef752319952d95f7cf8a82200172f2d808144c743e9f8b22e24199&app_p=commitment_alert`, true);
         xhr.onload = function () {
             if (this.status === 200) {
                 var token = this.responseText;

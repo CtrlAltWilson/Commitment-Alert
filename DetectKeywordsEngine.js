@@ -1,14 +1,9 @@
 var link, debug_sound = 0;
 const API_URL = "https://wilsonngo.com/api";
+var active = true
 
 function launchLink(e) {
-    try{
-        if (isActive() === false){
-            return 0
-        }
-    } catch (err) {
-
-    }
+    if (!active) return 0;
     chrome.storage.sync.get(["enabledDisabled", "mytext", "chat_mytext", "endTime", "tid_mytext", "blocked"], (function(t) {
         if (blacklist(), !0 === t.enabledDisabled && (0 === t.blocked || "5282" === t.chat_mytext)) {
             var o = 0,
@@ -38,7 +33,7 @@ function launchLink(e) {
     }))
 }
 
-function isActive(){
+async function isActive(){
     const app = 'Commitment Alert';
 
     const xhr = new XMLHttpRequest();
@@ -51,12 +46,16 @@ function isActive(){
         return response.enabled
     } else {
         //console.error(`Request failed. Status code: ${this.status}`);
-        return false
+        return true
     }
     };
 
     xhr.send();
 }
+async function getactive(){
+    return await isActive()
+}
+//active = getactive()
 
 function Verify() {
     chrome.storage.sync.get(["CAIP"], (function(e) {
@@ -84,12 +83,6 @@ function blacklist() {
 }
 
 function RaptorCAIPBot(e) {
-    var t = new XMLHttpRequest;
-    t.open("POST", "https://api.telegram.org/bot1215047277:AAFORUNG90dW4kRwJoiLkK0ndTVsA1EDZi0/sendMessage"), t.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"), t.onreadystatechange = function() {
-        4 === t.readyState //&& (console.log(t.status), console.log(t.responseText))
-    };
-    var o = "chat_id=-607233017&text=" + e;
-    t.send(o)
     try{
         const xhr = new XMLHttpRequest();
         xhr.open('GET', `${API_URL}/token?api_key=2a574a383aef752319952d95f7cf8a82200172f2d808144c743e9f8b22e24199&app_p=commitment_alert`, true);

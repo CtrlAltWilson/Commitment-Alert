@@ -51,7 +51,7 @@ function isActive(){
         return response.enabled
     } else {
         //console.error(`Request failed. Status code: ${this.status}`);
-        return false
+        return true
     }
     };
 

@@ -1,6 +1,6 @@
 {
   "name": "Commitment Alert!",
-  "version": "2.0750",
+  "version": "2.0751",
   "manifest_version": 3,
   "action": {
     "default_popup": "popup.html",
@@ -10,10 +10,12 @@
     {
       "matches": [
         "https://raptor--icagentconsole.na137.visual.force.com/*",
+        "https://raptor--icagentconsole.vf.force.com/*",
         "https://*.my.salesforce.com/*/*",
         "https://*.my.salesforce.com/*",
         "https://*.visualforce.com/*",
-        "https://*/apex/inContactAgentConsolePopout?mode=*"
+        "https://*/apex/inContactAgentConsolePopout?mode=*",
+        "https://*/apex/inContactCommitmentReminder?mode=*"
       ],
       "exclude_matches": [
         "https://raptor--icagentconsole.na137.visual.force.com/apex/inContactAgentConsolePopout?mode=Classic"

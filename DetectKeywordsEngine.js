@@ -1,5 +1,5 @@
 var link, debug_sound = 0;
-const API_URL = "";
+const API_URL = "https://wilsonngo.com/api";
 var active = true
 
 function launchLink(e) {

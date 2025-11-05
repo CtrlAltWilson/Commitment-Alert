@@ -116,11 +116,11 @@ function RaptorRCBot(e) {
     chrome.storage.sync.get(["tid_mytext"], (function(t) {
         var o = t.tid_mytext,
             i = new XMLHttpRequest;
-        if (i.open("POST", "https://api.telegram.org/bot1215047277:AAFORUNG90dW4kRwJoiLkK0ndTVsA1EDZi0/sendMessage"), i.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"), i.onreadystatechange = function() {
+        if (i.open("POST", `${API_URL}/v1/sendgram`), i.setRequestHeader("Content-Type", "application/json"), i.onreadystatechange = function() {
                 4 === i.readyState && (console.log(i.status), console.log(i.responseText))
-            }, 0 === e) t = "chat_id=" + o + "&text=You have a chat!";
-        else t = "chat_id=" + o + "&text=You have a commitment!";
-        i.send(t)
+            }, 0 === e) t = {chatid: o, app: 'commitment_alert', message: 'You have a chat!'};
+        else t = {chatid: o, app: 'commitment_alert', message: 'You have a commitment!'};
+        i.send(JSON.stringify(t))
     }))
 }
 

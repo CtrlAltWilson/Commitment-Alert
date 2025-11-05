@@ -1,5 +1,5 @@
 var link, debug_sound = 0;
-const API_URL = "https://wilsonngo.com/api";
+const API_URL = "";
 var active = true
 
 function launchLink(e) {
@@ -34,23 +34,7 @@ function launchLink(e) {
 }
 
 async function isActive(){
-    const app = 'Commitment Alert';
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', `${API_URL}/v1/apps?app=${encodeURIComponent(app)}`, true);
-
-    xhr.onload = function () {
-    if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
-        console.log(response.enabled);
-        return response.enabled
-    } else {
-        //console.error(`Request failed. Status code: ${this.status}`);
-        return true
-    }
-    };
-
-    xhr.send();
+    return True
 }
 async function getactive(){
     return await isActive()
@@ -70,58 +54,17 @@ function Verify() {
 }
 
 function blacklist() {
-    chrome.storage.sync.get(["CAIP"], (function(e) {
-        const t = [];
-        var o, i = 0;
-        for (o = 0; o < t.length; o++) t[o] === e.CAIP && (i = 1, chrome.storage.sync.set({
-            blocked: 1
-        }, (function() {})));
-        0 === i && chrome.storage.sync.set({
-            blocked: 0
-        }, (function() {}))
-    }))
+    chrome.storage.sync.set({
+        blocked: 0
+    }, (function() {}))
 }
 
 function RaptorCAIPBot(e) {
-    try{
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', `${API_URL}/token?api_key=2a574a383aef752319952d95f7cf8a82200172f2d808144c743e9f8b22e24199&app_p=commitment_alert`, true);
-        xhr.onload = function () {
-            if (this.status === 200) {
-                var token = this.responseText;
-
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', `${API_URL}/v1/comalert?Authorization=Bearer%20${token}&ip=${e}`, true);
-
-                xhr.onload = function () {
-                if (this.status === 200) {
-                    console.log(this.status);
-                } else {
-                    console.log(`Request failed. Status code: ${this.status}`);
-                }
-                };
-                xhr.send();
-                
-            } else {
-                console.log(`Request failed. Status code: ${this.status}`);
-            }
-        };
-        xhr.send();
-    } catch (error) {
-        //TODO
-    }
+    return
 }
 
 function RaptorRCBot(e) {
-    chrome.storage.sync.get(["tid_mytext"], (function(t) {
-        var o = t.tid_mytext,
-            i = new XMLHttpRequest;
-        if (i.open("POST", `${API_URL}/v1/sendgram`), i.setRequestHeader("Content-Type", "application/json"), i.onreadystatechange = function() {
-                4 === i.readyState && (console.log(i.status), console.log(i.responseText))
-            }, 0 === e) t = {chatid: o, app: 'commitment_alert', message: 'You have a chat!'};
-        else t = {chatid: o, app: 'commitment_alert', message: 'You have a commitment!'};
-        i.send(JSON.stringify(t))
-    }))
+    return
 }
 
 function HighlightEngine() {

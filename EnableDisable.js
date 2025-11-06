@@ -17,10 +17,8 @@ function EDCheck() {
         }
     });
 }
-
-///////////////
 EDCheck();
-///////////////
+
 
 //sets E/D on click
 document.addEventListener('DOMContentLoaded', function() {

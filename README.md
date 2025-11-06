@@ -12,8 +12,3 @@ Please have at least one window with Salesforce visible on screen else the chat 
 
 <h5>-This extension will only work for Raptor Technologies because of the special link that Raptor uses in Salesforce.
 <h5>-Commitments are cases from the queue that appears the to agent for 2 minutes. If the agent does not confirm the commitment within the given time, it will put the agent to refusal status.
-
-<h2>Update
-
-<h5>-This extension now supports sending alerts via Telegram. Developed bots to gather chat ID with python.
-<h5>-This extension has been updated to also alert for Raptor's chat interface.

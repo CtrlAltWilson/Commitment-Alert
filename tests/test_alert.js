@@ -1,119 +1,74 @@
-// Smoke test for the alert launcher in DetectKeywordsEngine.js.
+// Tests for decideAlert() in background.js -- how an alert gets delivered.
 //
 //   node tests/test_alert.js
 //
-// The extension can only really be exercised in Chrome, but the alert logic --
-// which link is chosen, whether the debounce holds, whether Telegram fires --
-// is pure enough to test headlessly. That is the part where a mistake is
-// silent and costly: an agent hears nothing and goes into Refusal.
-//
-// Everything above HighlightEngine is loaded and run against stubbed chrome.*
-// and window APIs. No dependencies; Node only.
+// As of v2.1300 the service worker owns the alert, so this is where the
+// sound-vs-window decision lives. It is the part where a mistake is silent and
+// expensive: pick wrong and the agent hears nothing and goes into Refusal.
 
-const fs = require("fs");
-const path = require("path");
-const vm = require("vm");
+const stub = require("./chrome_stub");
 
-const SOURCE = path.join(__dirname, "..", "DetectKeywordsEngine.js");
-const full = fs.readFileSync(SOURCE, "utf8");
-const marker = "function HighlightEngine() {";
-if (!full.includes(marker)) {
-    console.error("Could not find %j in %s -- has the file been restructured?", marker, SOURCE);
-    process.exit(1);
-}
-const alertCore = full.slice(0, full.indexOf(marker));
+stub.install();
+stub.load("background.js");
 
-let store = {};
-let opened = [];
-let posted = [];
+const { check, done } = stub.reporter();
 
-global.FEATURES = { telegram: true };
-global.chrome = {
-    storage: { sync: {
-        get(keys, cb) {
-            const out = {};
-            keys.forEach(k => { if (k in store) out[k] = store[k]; });
-            cb(out);
-        },
-        set(patch, cb) { Object.assign(store, patch); if (cb) cb(); }
-    }},
-    runtime: { getURL: p => "chrome-extension://TESTID/" + p }
-};
-global.window = { open: (url, name) => opened.push({ url, name }) };
-global.XMLHttpRequest = function () {
-    this.open = () => {};
-    this.setRequestHeader = () => {};
-    this.send = body => posted.push(JSON.parse(body));
-};
+const resolve = p => "chrome-extension://TESTID/" + p;
+const decide = (kind, stored) => decideAlert(kind, stored, resolve);
 
-vm.runInThisContext(alertCore, { filename: SOURCE });
+// --- default: invisible sound ----------------------------------------------
+let d = decide("commitment", {});
+check("commitment with nothing configured plays the bundled sound invisibly",
+    d.mode === "sound" && d.url.endsWith("melodyFinal.mp3"));
 
-let failures = 0;
-function check(name, condition) {
-    console.log((condition ? "  PASS  " : "  FAIL  ") + name);
-    if (!condition) failures++;
-}
-function reset(settings) {
-    store = Object.assign({ enabledDisabled: true }, settings);
-    opened = [];
-    posted = [];
-}
+d = decide("chat", {});
+check("chat with nothing configured plays the bundled chat sound invisibly",
+    d.mode === "sound" && d.url.endsWith("chat_melody.mp3"));
 
-reset({});
-launchLink("commitment");
-check("commitment with no link configured plays the bundled sound",
-    opened.length === 1 && opened[0].url.endsWith("melodyFinal.mp3") && opened[0].name === "Commitment");
+// --- window mode ------------------------------------------------------------
+d = decide("commitment", { windowMode: true, mytext: "https://youtu.be/abc" });
+check("window mode with a link opens the link",
+    d.mode === "window" && d.url === "https://youtu.be/abc");
 
-reset({});
-launchLink("chat");
-check("chat with no link configured plays the bundled chat sound",
-    opened.length === 1 && opened[0].url.endsWith("chat_melody.mp3") && opened[0].name === "Chat");
+d = decide("commitment", { windowMode: true });
+check("window mode with no link opens the bundled sound in a window (old behaviour)",
+    d.mode === "window" && d.url.endsWith("melodyFinal.mp3"));
 
-reset({ mytext: "https://youtu.be/abc" });
-launchLink("commitment");
-check("commitment opens the configured link",
-    opened.length === 1 && opened[0].url === "https://youtu.be/abc");
+// --- a link cannot be played invisibly --------------------------------------
+d = decide("commitment", { mytext: "https://youtu.be/abc" });
+check("a link with window mode OFF falls back to the bundled sound, not the link",
+    d.mode === "sound" && d.url.endsWith("melodyFinal.mp3"));
 
-reset({ chat_mytext: "5282" });
-launchLink("chat");
-check("legacy 5282 sentinel still falls back to the default sound",
-    opened.length === 1 && opened[0].url.endsWith("chat_melody.mp3"));
+// --- the two alert kinds are independent ------------------------------------
+d = decide("chat", { windowMode: true, chat_mytext: "https://youtu.be/chat" });
+check("commitment window mode does not leak into chat",
+    d.mode === "sound");
 
-reset({});
-launchLink("commitment");
-launchLink("commitment");
-launchLink("commitment");
-check("debounce: three alerts in a row fire only once", opened.length === 1);
+d = decide("chat", { chat_windowMode: true, chat_mytext: "https://youtu.be/chat" });
+check("chat uses its own mode flag and its own link",
+    d.mode === "window" && d.url === "https://youtu.be/chat");
 
-reset({});
-store.endTime = Date.now() - 1;
-launchLink("commitment");
-check("debounce expires and the next alert fires", opened.length === 1);
+// --- legacy sentinel --------------------------------------------------------
+d = decide("chat", { chat_windowMode: true, chat_mytext: "5282" });
+check("legacy 5282 sentinel is treated as 'no link', not as a URL",
+    d.mode === "window" && d.url.endsWith("chat_melody.mp3"));
 
-reset({});
-store.enabledDisabled = false;
-launchLink("commitment");
-check("switched off means no alert", opened.length === 0);
+d = decide("chat", { chat_mytext: "5282" });
+check("legacy 5282 sentinel with window mode off plays the default sound",
+    d.mode === "sound" && d.url.endsWith("chat_melody.mp3"));
 
-reset({ tid_mytext: "12345" });
-launchLink("commitment");
-check("Telegram notified when a chat id is set",
-    posted.length === 1 && posted[0].chatid === "12345" && posted[0].message === "You have a commitment!");
+// --- empty string is not a link --------------------------------------------
+d = decide("commitment", { windowMode: true, mytext: "" });
+check("an empty link string is treated as unset",
+    d.mode === "window" && d.url.endsWith("melodyFinal.mp3"));
 
-reset({});
-launchLink("chat");
-check("no Telegram call when no chat id is set", posted.length === 0);
+// --- unknown kind -----------------------------------------------------------
+check("an unknown alert kind returns null rather than throwing",
+    decide("bogus", {}) === null);
 
-reset({ tid_mytext: "12345" });
-global.FEATURES = { telegram: false };
-launchLink("chat");
-check("no-Telegram build still alerts but makes no notify call",
-    posted.length === 0 && opened.length === 1);
-global.FEATURES = { telegram: true };
+// --- offline fallback config ------------------------------------------------
+check("the fallback cloud URL is https and points at the commitment reminder",
+    /^https:\/\//.test(DEFAULT_CONFIG.testPageUrl) &&
+    DEFAULT_CONFIG.testPageUrl.includes("inContactCommitmentReminder"));
 
-reset({});
-launchLink("bogus");
-check("an unknown alert kind is ignored rather than throwing", opened.length === 0);
-
-console.log(failures ? `\n${failures} FAILED` : "\nall passed");
-process.exit(failures ? 1 : 0);
+done();

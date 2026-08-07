@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <title>Commitment Alert audio</title>
+   </head>
+   <body>
+      <!-- Never visible. An MV3 service worker has no DOM and cannot play
+           audio, so playback happens here in an offscreen document created
+           with reason AUDIO_PLAYBACK. -->
+      <script src="offscreen.js"></script>
+   </body>
+</html>

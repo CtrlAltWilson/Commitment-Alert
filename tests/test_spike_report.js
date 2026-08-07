@@ -8,31 +8,12 @@
 // of real data and either keep an over-broad permission we didn't need, or
 // drop the content script and start missing commitments.
 
-const fs = require("fs");
-const path = require("path");
-const vm = require("vm");
+const stub = require("./chrome_stub");
 
-const SOURCE = path.join(__dirname, "..", "background.js");
+stub.install();
+stub.load("background.js");
 
-// Stub the service-worker environment: importScripts, chrome.*, console.
-global.importScripts = () => {};
-global.FEATURES = { telegram: true, navSpike: false };
-global.chrome = {
-    storage: { local: { get: (k, cb) => cb({}), set: () => {}, remove: (k, cb) => cb && cb() } },
-    runtime: { onMessage: { addListener: () => {} } }
-    // chrome.webNavigation deliberately absent -- with navSpike false the
-    // listener block must not run, which this also checks.
-};
-const realLog = console.log;
-console.log = () => {};
-vm.runInThisContext(fs.readFileSync(SOURCE, "utf8"), { filename: SOURCE });
-console.log = realLog;
-
-let failures = 0;
-function check(name, condition) {
-    console.log((condition ? "  PASS  " : "  FAIL  ") + name);
-    if (!condition) failures++;
-}
+const { check, done } = stub.reporter();
 
 const T = 1770000000000;
 const webnav = (t, tabId, frameId, event) =>
@@ -87,5 +68,4 @@ r = summarise([webnav(T, 7, 0), content(T + 60000, 7, 0)]);
 check("webNavigation firing without correlation is called out",
     /never alongside/.test(r.verdict));
 
-console.log(failures ? `\n${failures} FAILED` : "\nall passed");
-process.exit(failures ? 1 : 0);
+done();

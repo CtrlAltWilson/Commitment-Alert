@@ -119,10 +119,64 @@ function save(key, value) {
     chrome.storage.sync.set(patch, function() {});
 }
 
+// Which alerts open a visible window instead of playing invisibly. A link can
+// only be shown in a window -- a YouTube page is not audio -- so ticking one of
+// these is how a configured link actually gets used.
+var MODES = [
+    { key: "windowMode", input: "windowMode", linkKey: "mytext" },
+    { key: "chat_windowMode", input: "chat_windowMode", linkKey: "chat_mytext" }
+];
+
+function refreshModes() {
+    var keys = MODES.map(function(m) { return m.key; })
+        .concat(MODES.map(function(m) { return m.linkKey; }));
+    chrome.storage.sync.get(keys, function(stored) {
+        var strandedLink = false;
+        MODES.forEach(function(mode) {
+            var on = stored[mode.key] === true;
+            document.getElementById(mode.input).checked = on;
+            var link = stored[mode.linkKey];
+            // A link is set but the alert plays invisibly, so the link is
+            // being ignored. Say so rather than silently dropping it.
+            if (!on && link !== undefined && link !== "") strandedLink = true;
+        });
+        document.getElementById("modeHint").textContent = strandedLink
+            ? "Your link is not being used — tick the box above to open it in a window."
+            : "Unticked = the alert sound plays in the background, with no window.";
+    });
+}
+
+MODES.forEach(function(mode) {
+    document.getElementById(mode.input).addEventListener("change", function() {
+        save(mode.key, this.checked);
+        refreshModes();
+    });
+});
+
+// Point the cloud button at whatever the config endpoint last told us. The
+// href in popup.html is the offline fallback, so a failed lookup or an
+// unreachable server leaves the button working exactly as before.
+function refreshCloudLink() {
+    try {
+        chrome.runtime.sendMessage({ type: "GET_CONFIG" }, function(config) {
+            void chrome.runtime.lastError;
+            if (!config || !config.testPageUrl) return;
+            // Never navigate to whatever a server hands back unchecked: this
+            // link is opened by the whole Support team.
+            if (!/^https:\/\//i.test(config.testPageUrl)) return;
+            document.getElementById("reopenCommitment").href = config.testPageUrl;
+        });
+    } catch (e) {
+        // Worker unavailable; the fallback href stands.
+    }
+}
+
 // --- wiring ---------------------------------------------------------------
 
 document.getElementById("versionCheck").innerHTML = "v" + chrome.runtime.getManifest().version;
 refresh();
+refreshModes();
+refreshCloudLink();
 
 // Save: write every field the user actually filled in.
 document.querySelector('button[type="submit"]').addEventListener("click", function() {
@@ -148,6 +202,7 @@ document.querySelector('button[type="submit"]').addEventListener("click", functi
     } else if (saved > 0) {
         flash("Saved!");
         refresh();
+        refreshModes();
     } else {
         flash("Nothing was typed!");
     }
@@ -156,8 +211,11 @@ document.querySelector('button[type="submit"]').addEventListener("click", functi
 // Reset: clear every setting.
 document.querySelector('button[type="default"]').addEventListener("click", function() {
     SETTINGS.forEach(function(setting) { save(setting.key, ""); });
+    // Back to the default: invisible sound, no window.
+    MODES.forEach(function(mode) { save(mode.key, false); });
     flash("Saved!");
     refresh();
+    refreshModes();
 });
 
 // The little "x" buttons. One handler for all of them -- each button declares
@@ -167,6 +225,7 @@ Array.prototype.forEach.call(document.querySelectorAll("[data-clear]"), function
         save(button.getAttribute("data-clear"), "");
         flash("Saved!");
         refresh();
+        refreshModes();
     });
 });
 

@@ -8,7 +8,10 @@
       <script src="libs/jquery/jquery-3.3.1.js"></script>
    </head>
    <body>
-      <p class="aligncenter"> <a title="Reopen Commitment Box (If there is one active)" href="https://raptor--icagentconsole.na137.visual.force.com/apex/inContactCommitmentReminder?mode=Classic" target="_blank" id="reopenCommitment"><img src="/icons/48x48.png" class="center"></a> <br></p>
+      <!-- href is the offline fallback; popup.js replaces it with the value
+           from the config endpoint once Support Utilities is serving one, so
+           the annually-changing URL stops needing a re-release. -->
+      <p class="aligncenter"> <a title="Reopen Commitment Box (If there is one active)" href="https://raptor--icagentconsole.vf.force.com/apex/inContactCommitmentReminder?mode=" target="_blank" id="reopenCommitment"><img src="/icons/48x48.png" class="center"></a> <br></p>
       <p class="aligncenter"> <img src="/icons/title 230x32.png" class="center"><br></p>
       <br>
       <div class="switch_centered">
@@ -29,6 +32,12 @@
             <br>
          </div>
          <div id="textBox"> Commitment Alert Link: <br><input type="text" id="YTlink" name="YTlink" placeholder="https://"> <br><br>Chat Alert Link: <br><input type="text" id="Chat_YTlink" name="Chat_YTlink" placeholder="https://"> <br><br><span id="telegramSettings">Telegram ID: <br><input type="text" id="TeleID" name="TeleID" placeholder=""></span> </div>
+         &nbsp;
+         <div id="modeBox">
+            <label><input type="checkbox" id="windowMode" data-mode="windowMode"> Open a window for commitments</label><br>
+            <label><input type="checkbox" id="chat_windowMode" data-mode="chat_windowMode"> Open a window for chats</label><br>
+            <small id="modeHint"></small>
+         </div>
          &nbsp;
          <div id="Buttons"> <button type="submit">Save</button> &nbsp;&nbsp;&nbsp; <button type="default">Reset</button> </div>
       </div>

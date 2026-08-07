@@ -1,38 +1,307 @@
-// MV3 service worker.
+// MV3 service worker -- now the owner of the alert.
 //
-// Until 2026-08-07 this file was literally `//do nothing`, which is why the
-// extension was MV3 in name only: content scripts sent chrome.runtime messages
-// that nothing was listening for (Code-Analysis finding B2). It now has a real
-// message handler, and -- in the spike build only -- a parallel commitment
-// detector built on chrome.webNavigation.
+// Until v2.1200 this file was `//do nothing`. As of v2.1300 the content
+// scripts are pure detectors: they notice a commitment or a chat and send one
+// message. Everything else -- the debounce, choosing sound vs window, playing
+// the audio, the toolbar badge, and every way an alert can stop -- lives here.
+//
+// Why the move: audio can only be played invisibly from an offscreen document,
+// which only the service worker can create. It also fixes two older problems.
+// The once-per-minute debounce used to be written from every frame of every
+// Salesforce tab against a 120-writes-per-minute storage.sync quota (finding
+// B8); there is now a single writer. And opening the alert window from a
+// content script was at the mercy of the popup blocker, because it happened
+// without a user gesture -- chrome.windows.create is not.
 //
 // MV3 rules this file has to respect:
-//
-//  * Listeners MUST be registered synchronously at the top level. Chrome
-//    dispatches events to a sleeping worker by starting it and replaying the
-//    event; a listener registered inside a callback is registered too late and
-//    silently misses events.
-//  * The worker is terminated after ~30 s idle. Keep NO state in module
-//    variables -- anything that must survive goes in chrome.storage.
-//  * Use chrome.alarms, never setTimeout, for anything longer than a moment.
+//   * Listeners MUST be registered synchronously at the top level, or Chrome
+//     starts the worker for an event that then has nobody to deliver it to.
+//   * The worker is terminated after ~30 s idle. Keep NO state in module
+//     variables -- anything that must survive goes in chrome.storage.
+//   * chrome.alarms, never setTimeout, for anything longer than a moment.
 
 importScripts("features.js");
 
+const API_URL = "https://wilsonngo.com/api";
+
+// One alert per minute, however many tabs and frames saw it.
+const ALERT_COOLDOWN_MS = 60000;
+
+// Commitments expire in about two minutes. This is the backstop that
+// guarantees audio can never play forever if every other stop signal is
+// missed -- the worst failure mode available to this feature.
+const ALERT_TIMEOUT_MINUTES = 2.5;
+
+// Legacy sentinel: a chat link of exactly "5282" means "use the default
+// sound". Preserved because it may be sitting in someone's synced settings.
+const USE_DEFAULT_SOUND = "5282";
+
+const ALERTS = {
+    commitment: {
+        linkKey: "mytext",
+        modeKey: "windowMode",
+        sound: "melodyFinal.mp3",
+        windowName: "Commitment",
+        message: "You have a commitment!"
+    },
+    chat: {
+        linkKey: "chat_mytext",
+        modeKey: "chat_windowMode",
+        sound: "chat_melody.mp3",
+        windowName: "Chat",
+        message: "You have a chat!"
+    }
+};
+
+// Where the cloud button in the popup goes when the extension has never
+// reached the config endpoint. Deliberately a real working URL, not a
+// placeholder: the button has to work offline, on first run, and if Support
+// Utilities is down. See docs/Remote-Config-and-Relay.md.
+const DEFAULT_CONFIG = {
+    testPageUrl: "https://raptor--icagentconsole.vf.force.com/apex/inContactCommitmentReminder?mode=",
+    chatPhrase: "There is a chat contact waiting",
+    notice: null,
+    minVersion: null
+};
+
+// --- pure decision logic (unit-tested in tests/test_alert.js) ---------------
+
+// Given the stored settings, decide how this alert should be delivered.
+// Returns { mode: "sound" | "window", url, windowName }.
+//
+// A link can only be shown in a window -- a YouTube page is not audio and
+// cannot be played invisibly. So "window mode off" always means the bundled
+// sound, even if a link is configured. The popup says so rather than quietly
+// ignoring the user's link.
+function decideAlert(kind, stored, resolveUrl) {
+    const alert = ALERTS[kind];
+    if (!alert) return null;
+
+    const link = stored[alert.linkKey];
+    const hasLink = link !== undefined && link !== "" && link !== USE_DEFAULT_SOUND;
+    const wantsWindow = stored[alert.modeKey] === true;
+
+    if (wantsWindow) {
+        return {
+            mode: "window",
+            url: hasLink ? link : resolveUrl(alert.sound),
+            windowName: alert.windowName
+        };
+    }
+    return { mode: "sound", url: resolveUrl(alert.sound), windowName: alert.windowName };
+}
+
+// --- alert lifecycle --------------------------------------------------------
+
+async function maybeAlert(kind, sender) {
+    const alert = ALERTS[kind];
+    if (!alert) return;
+
+    const sync = await chrome.storage.sync.get([
+        "enabledDisabled", "tid_mytext", alert.linkKey, alert.modeKey
+    ]);
+    if (sync.enabledDisabled !== true) return;
+
+    // Single-writer debounce in storage.local. Content scripts no longer touch
+    // it, so the storage.sync write-quota problem is gone.
+    const local = await chrome.storage.local.get(["alertEndTime"]);
+    const now = Date.now();
+    if (local.alertEndTime && now < local.alertEndTime) return;
+    await chrome.storage.local.set({ alertEndTime: now + ALERT_COOLDOWN_MS });
+
+    const decision = decideAlert(kind, sync, path => chrome.runtime.getURL(path));
+    if (!decision) return;
+
+    let windowId = null;
+    if (decision.mode === "window") {
+        try {
+            const created = await chrome.windows.create({
+                url: decision.url,
+                type: "popup",
+                width: 560,
+                height: 420
+            });
+            windowId = created ? created.id : null;
+        } catch (e) {
+            console.log("[commitment-alert] window.create failed", e);
+        }
+    } else {
+        await playSound(decision.url);
+    }
+
+    await chrome.storage.local.set({
+        activeAlert: {
+            kind: kind,
+            mode: decision.mode,
+            tabId: sender && sender.tab ? sender.tab.id : null,
+            windowId: windowId,
+            startedAt: now
+        }
+    });
+
+    chrome.action.setBadgeText({ text: "♪" });
+    chrome.action.setBadgeBackgroundColor({ color: "#D93025" });
+    // Clearing the popup is what makes chrome.action.onClicked fire, which is
+    // how a single click on the toolbar icon stops the alert.
+    chrome.action.setPopup({ popup: "" });
+    chrome.alarms.create("alert-timeout", { delayInMinutes: ALERT_TIMEOUT_MINUTES });
+
+    if (sync.tid_mytext) notifyTelegram(alert, sync.tid_mytext);
+}
+
+async function stopAlert() {
+    const { activeAlert } = await chrome.storage.local.get(["activeAlert"]);
+
+    try {
+        await chrome.runtime.sendMessage({ target: "offscreen", type: "STOP" });
+    } catch (e) {
+        // No offscreen document open. Fine.
+    }
+
+    if (activeAlert && activeAlert.windowId !== null && activeAlert.windowId !== undefined) {
+        try {
+            await chrome.windows.remove(activeAlert.windowId);
+        } catch (e) {
+            // Already closed by the user.
+        }
+    }
+
+    await chrome.storage.local.remove("activeAlert");
+    chrome.alarms.clear("alert-timeout");
+    chrome.action.setBadgeText({ text: "" });
+    chrome.action.setPopup({ popup: "popup.html" });
+}
+
+async function playSound(url) {
+    try {
+        await ensureOffscreen();
+        await chrome.runtime.sendMessage({ target: "offscreen", type: "PLAY", url: url });
+    } catch (e) {
+        console.log("[commitment-alert] offscreen playback failed", e);
+    }
+}
+
+async function ensureOffscreen() {
+    // Only one offscreen document may exist per profile. hasDocument() is not
+    // available on every Chrome that supports the API, so treat the
+    // "already exists" error as success rather than depending on it.
+    try {
+        await chrome.offscreen.createDocument({
+            url: "offscreen.html",
+            reasons: ["AUDIO_PLAYBACK"],
+            justification: "Play the commitment alert sound without opening a visible window."
+        });
+    } catch (e) {
+        if (!String(e).includes("Only a single offscreen")) throw e;
+    }
+}
+
+function notifyTelegram(alert, chatId) {
+    if (!FEATURES.telegram) return;
+    fetch(`${API_URL}/v1/sendgram`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatid: chatId, app: "commitment_alert", message: alert.message })
+    }).catch(e => console.log("[commitment-alert] sendgram failed", e));
+}
+
+// --- listeners (all registered synchronously) -------------------------------
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    // Messages addressed to the offscreen document are not ours.
+    if (!message || !message.type || message.target === "offscreen") return;
+
+    if (message.type === "ALERT") {
+        maybeAlert(message.kind, sender);
+        if (FEATURES.navSpike) recordSpike({
+            t: Date.now(), source: "content", kind: message.kind,
+            url: (sender && sender.url) || "",
+            tabId: sender && sender.tab ? sender.tab.id : null,
+            frameId: sender ? sender.frameId : null
+        });
+        return;
+    }
+
+    // The commitment page went away -- stop the alert early.
+    if (message.type === "GONE") {
+        stopAlert();
+        return;
+    }
+
+    if (message.type === "GET_CONFIG") {
+        chrome.storage.local.get(["config"], data => {
+            sendResponse(Object.assign({}, DEFAULT_CONFIG, data.config || {}));
+        });
+        return true;
+    }
+
+    if (message.type === "GET_SPIKE_REPORT") {
+        chrome.storage.local.get([SPIKE_LOG_KEY], data => {
+            sendResponse(summarise(data[SPIKE_LOG_KEY] || []));
+        });
+        return true;
+    }
+
+    if (message.type === "CLEAR_SPIKE_LOG") {
+        chrome.storage.local.remove(SPIKE_LOG_KEY, () => sendResponse({ cleared: true }));
+        return true;
+    }
+});
+
+// Single click on the toolbar icon stops the alert. Only fires while the popup
+// is cleared, i.e. only while alerting.
+chrome.action.onClicked.addListener(() => stopAlert());
+
+// The tab that reported the commitment was closed.
+chrome.tabs.onRemoved.addListener(tabId => {
+    chrome.storage.local.get(["activeAlert"], data => {
+        if (data.activeAlert && data.activeAlert.tabId === tabId) stopAlert();
+    });
+});
+
+// The user closed the alert window themselves.
+chrome.windows.onRemoved.addListener(windowId => {
+    chrome.storage.local.get(["activeAlert"], data => {
+        if (data.activeAlert && data.activeAlert.windowId === windowId) stopAlert();
+    });
+});
+
+// Backstop. Must be an alarm, not setTimeout: the worker is terminated after
+// ~30 s idle and a pending timeout would die with it, leaving audio playing
+// with nothing left to stop it.
+chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm.name === "alert-timeout") stopAlert();
+});
+
+// One-time migration. Anyone who already had an alert link was, by definition,
+// getting a window -- keep them on window mode so nothing changes under them.
+// Everyone else moves to the new invisible default.
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.sync.get(
+        ["mytext", "chat_mytext", "windowMode", "chat_windowMode", "modeMigrated"],
+        stored => {
+            if (stored.modeMigrated) return;
+            chrome.storage.sync.set({
+                windowMode: !!(stored.mytext && stored.mytext !== ""),
+                chat_windowMode: !!(stored.chat_mytext && stored.chat_mytext !== ""),
+                modeMigrated: true
+            });
+        }
+    );
+    // Clear any badge left over from an interrupted alert.
+    chrome.action.setBadgeText({ text: "" });
+    chrome.action.setPopup({ popup: "popup.html" });
+});
+
+// --- CALERT-20 spike --------------------------------------------------------
+// Observation only: it never fires an alert. See
+// docs/Spike-webNavigation-Runbook.md.
+
 const SPIKE_LOG_KEY = "navSpikeLog";
 const SPIKE_LOG_MAX = 300;
-
-// Matched against the URL path. Deliberately does NOT include "?mode=" -- the
-// live URLs vary (?mode=Classic, ?mode=, and possibly none) and the point of
-// the spike is to find out what actually arrives.
 const COMMITMENT_PATH = "inContactCommitmentReminder";
 
-// Append to a bounded log in storage.local (not .session -- the spike needs to
-// survive worker restarts and browser restarts so data accumulates over days).
-//
-// Read-modify-write is not atomic, so two events in the same instant can lose
-// one entry. Acceptable for a spike; do not reuse this shape for anything that
-// must not drop writes.
-function record(entry) {
+function recordSpike(entry) {
     chrome.storage.local.get([SPIKE_LOG_KEY], data => {
         const log = Array.isArray(data[SPIKE_LOG_KEY]) ? data[SPIKE_LOG_KEY] : [];
         log.push(entry);
@@ -42,57 +311,9 @@ function record(entry) {
     console.log("[commitment-alert]", entry.source, entry.event || entry.kind, entry.url);
 }
 
-// --- messages from content scripts -----------------------------------------
-// This is the direction that actually works: content script -> service worker.
-// (Content script -> content script does not, which is finding B2.)
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (!message || !message.type) return;
-
-    if (message.type === "DETECTED") {
-        record({
-            t: Date.now(),
-            source: "content",
-            kind: message.kind,
-            url: (sender && sender.url) || "",
-            tabId: sender && sender.tab ? sender.tab.id : null,
-            frameId: sender ? sender.frameId : null
-        });
-        return;
-    }
-
-    if (message.type === "GET_SPIKE_REPORT") {
-        chrome.storage.local.get([SPIKE_LOG_KEY], data => {
-            sendResponse(summarise(data[SPIKE_LOG_KEY] || []));
-        });
-        return true; // keep the channel open for the async response
-    }
-
-    if (message.type === "CLEAR_SPIKE_LOG") {
-        chrome.storage.local.remove(SPIKE_LOG_KEY, () => sendResponse({ cleared: true }));
-        return true;
-    }
-});
-
-// --- CALERT-20 spike: can webNavigation replace the content-script match? ---
-//
-// Runs ALONGSIDE the existing content-script detection and only observes -- it
-// never fires an alert. If webNavigation turns out not to see the commitment
-// page, nothing is lost: the content script is still doing the real work.
-// That is the whole point. A missed commitment costs an agent a Refusal, so
-// this cannot be an either/or experiment on live users.
-//
-// Two things the collected data has to answer:
-//   1. Do events arrive at all for arbitrary hosts with only the
-//      "webNavigation" permission (no host permissions)?
-//   2. Is the commitment reminder a real navigation, or is it rendered
-//      client-side into an existing frame? If the latter, webNavigation never
-//      fires and the content script stays the right tool.
-
 if (FEATURES.navSpike && chrome.webNavigation) {
     const filter = { url: [{ pathContains: COMMITMENT_PATH }] };
-
-    const observe = eventName => details => record({
+    const observe = eventName => details => recordSpike({
         t: Date.now(),
         source: "webnav",
         event: eventName,
@@ -101,19 +322,11 @@ if (FEATURES.navSpike && chrome.webNavigation) {
         frameId: details.frameId,
         transitionType: details.transitionType || null
     });
-
-    // onCommitted fires when the navigation is committed -- the earliest point
-    // with a settled URL. onCompleted is the late bound. onHistoryStateUpdated
-    // catches pushState/replaceState, which is how a single-page app would
-    // change the URL without a real navigation.
     chrome.webNavigation.onCommitted.addListener(observe("onCommitted"), filter);
     chrome.webNavigation.onCompleted.addListener(observe("onCompleted"), filter);
     chrome.webNavigation.onHistoryStateUpdated.addListener(observe("onHistoryStateUpdated"), filter);
-
     console.log("[commitment-alert] webNavigation spike active, filter pathContains:", COMMITMENT_PATH);
 }
-
-// --- reporting --------------------------------------------------------------
 
 function summarise(log) {
     const report = {
@@ -126,7 +339,6 @@ function summarise(log) {
         webnavSubFrame: 0,
         contentTopFrame: 0,
         contentSubFrame: 0,
-        // Positive = webNavigation was first, i.e. it could alert sooner.
         pairings: []
     };
 
@@ -141,8 +353,6 @@ function summarise(log) {
         }
     });
 
-    // Pair each content-script detection with the nearest webNavigation
-    // onCommitted for the same tab within 10 s, to see which arrived first.
     const commits = log.filter(e => e.source === "webnav" && e.event === "onCommitted");
     log.filter(e => e.source === "content" && e.kind === "commitment").forEach(c => {
         let best = null;

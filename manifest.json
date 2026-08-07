@@ -1,6 +1,6 @@
 {
   "name": "Commitment Alert!",
-  "version": "2.1200",
+  "version": "2.1300",
   "manifest_version": 3,
   "action": {
     "default_popup": "popup.html",
@@ -40,14 +40,24 @@
   },
   "description": "Pop up sound alerts for commitments",
   "permissions": [
-    "storage"
+    "storage",
+    "offscreen",
+    "alarms"
   ],
-  "host_permissions":[
+  "host_permissions": [
     "https://raptor--icagentconsole.na137.visual.force.com/*",
     "https://*/apex/inContactCommitmentReminder*"
   ],
-  "web_accessible_resources": [{
-    "resources":["melodyFinal.mp3","chat_melody.mp3","alert.mp3"],
-    "matches":["<all_urls>"]
-  }]
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "melodyFinal.mp3",
+        "chat_melody.mp3",
+        "alert.mp3"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

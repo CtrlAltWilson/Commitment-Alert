@@ -39,6 +39,8 @@ DIST = ROOT / "dist"
 INCLUDE_FILES = [
     "manifest.json",
     "background.js",
+    "offscreen.html",
+    "offscreen.js",
     "features.js",
     "DetectKeywordsEngine.js",
     "KeywordSet.js",
@@ -68,7 +70,7 @@ FEATURE_HOSTS = {
 # wilsonngo.com in it; verify() enforces that as a hard check rather than trust.
 FEATURE_REWRITES = {
     "telegram": [
-        ("DetectKeywordsEngine.js",
+        ("background.js",
          'const API_URL = "https://wilsonngo.com/api";',
          'const API_URL = "";'),
     ],
@@ -180,6 +182,15 @@ def verify(out_dir, variant):
             continue
         if not (out_dir / ref.lstrip("/")).exists():
             problems.append("manifest references missing file: %s" % ref)
+
+    # The offscreen document is created at runtime, so nothing in the manifest
+    # points at it and the reference check above cannot catch its absence. A
+    # missing offscreen.html means invisible audio fails silently -- exactly
+    # the failure this extension exists to prevent.
+    if "offscreen" in manifest.get("permissions", []):
+        for required in ("offscreen.html", "offscreen.js"):
+            if not (out_dir / required).exists():
+                problems.append("offscreen permission granted but %s is missing" % required)
 
     features_js = (out_dir / "features.js").read_text(encoding="utf-8")
     for name, enabled in variant["features"].items():

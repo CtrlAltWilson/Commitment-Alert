@@ -1,67 +1,21 @@
-// Alert launcher.
+// Commitment / chat detection.
 //
-// Rewritten 2026-08-07. The commitment and chat paths were two copies of the
-// same logic inside a stack of nested ifs and comma-sequenced expressions, with
-// the alert kind passed as a bare 1 or 0. They are now one code path driven by
-// the ALERTS table: adding a third alert type is a table entry, not another
-// branch.
+// As of v2.1300 this file only DETECTS. The service worker owns the debounce,
+// the sound-vs-window decision, playback, the toolbar badge and every way an
+// alert stops. That move is what makes invisible audio possible -- only the
+// worker can create the offscreen document that plays it.
+//
+// launchLink() keeps its name on purpose: one of its two call sites is buried
+// mid-expression inside the highlight engine below, and renaming it there is
+// exactly the kind of edit that silently kills the chat alert.
 
-// Set to 1 to bypass the once-per-minute debounce while testing.
-var debug_sound = 0;
+const ALERT_KINDS = { commitment: true, chat: true };
 
-// Only used by the Telegram notify call, which the no-Telegram build gates off.
-const API_URL = "https://wilsonngo.com/api";
-
-// One alert per minute, shared across every tab and frame via storage.sync.
-// This is what stops eight open Salesforce tabs firing eight alerts.
-const ALERT_COOLDOWN_MS = 60000;
-
-// Legacy sentinel: a chat link of exactly "5282" means "use the default sound".
-// Preserved because it may be saved in someone's synced settings.
-const USE_DEFAULT_SOUND = "5282";
-
-const ALERTS = {
-    commitment: {
-        linkKey: "mytext",
-        sound: "melodyFinal.mp3",
-        windowName: "Commitment",
-        message: "You have a commitment!"
-    },
-    chat: {
-        linkKey: "chat_mytext",
-        sound: "chat_melody.mp3",
-        windowName: "Chat",
-        message: "You have a chat!"
-    }
-};
-
-// True if enough time has passed since the last alert. Claims the slot as a
-// side effect so a second caller in the same instant loses the race.
-function claimAlertSlot(endTime) {
-    const now = Date.now();
-    const ready = endTime === undefined || endTime === "" || endTime < now || debug_sound === 1;
-    if (!ready) return false;
-    chrome.storage.sync.set({ endTime: now + ALERT_COOLDOWN_MS }, function() {});
-    return true;
-}
-
-// What the user configured for this alert, or the bundled sound if nothing is
-// set (or if the legacy "use default" sentinel is stored).
-function alertTarget(alert, stored) {
-    const configured = stored[alert.linkKey];
-    if (configured === undefined || configured === "" || configured === USE_DEFAULT_SOUND) {
-        return chrome.runtime.getURL(alert.sound);
-    }
-    return configured;
-}
-
-// Tell the service worker a detection happened. Observation only -- the alert
-// does not depend on this, and a failure here must never stop one firing.
-function reportDetection(kind) {
+function sendToWorker(message) {
     try {
-        chrome.runtime.sendMessage({ type: "DETECTED", kind: kind }, function() {
+        chrome.runtime.sendMessage(message, function() {
             // Reading lastError suppresses the "unchecked runtime.lastError"
-            // console noise when the worker is not listening.
+            // console noise when the worker is still starting.
             void chrome.runtime.lastError;
         });
     } catch (e) {
@@ -71,46 +25,8 @@ function reportDetection(kind) {
 
 // kind: "commitment" | "chat"
 function launchLink(kind) {
-    const alert = ALERTS[kind];
-    if (!alert) return;
-
-    // Before the debounce, so the spike counts real detections rather than
-    // the subset that survived the once-per-minute cooldown.
-    reportDetection(kind);
-
-    chrome.storage.sync.get(
-        ["enabledDisabled", "endTime", "tid_mytext", alert.linkKey],
-        function(stored) {
-            if (stored.enabledDisabled !== true) return;
-            // Was: enabledDisabled && (blocked === 0 || chat_mytext === "5282").
-            // blacklist() only ever set blocked to 0 (its blocklist array was
-            // always empty), so the extra clause could never change the outcome.
-            if (!claimAlertSlot(stored.endTime)) return;
-
-            window.open(alertTarget(alert, stored), alert.windowName, "resizable,scrollbars,status");
-
-            if (stored.tid_mytext) notifyTelegram(alert, stored.tid_mytext);
-        }
-    );
-}
-
-function notifyTelegram(alert, chatId) {
-    // Build-variant gate: the no-Telegram build makes no notify call at all.
-    if (typeof FEATURES === "undefined" || !FEATURES.telegram) return;
-
-    const request = new XMLHttpRequest();
-    request.open("POST", `${API_URL}/v1/sendgram`);
-    request.setRequestHeader("Content-Type", "application/json");
-    request.onreadystatechange = function() {
-        if (request.readyState === 4 && request.status !== 200) {
-            console.log("sendgram failed", request.status, request.responseText);
-        }
-    };
-    request.send(JSON.stringify({
-        chatid: chatId,
-        app: "commitment_alert",
-        message: alert.message
-    }));
+    if (!ALERT_KINDS[kind]) return;
+    sendToWorker({ type: "ALERT", kind: kind });
 }
 
 function HighlightEngine() {
@@ -171,7 +87,20 @@ function HighlightEngine() {
         }
     }
 }
-window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1 && launchLink("commitment");
+if (window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1) {
+    launchLink("commitment");
+    // Tell the worker when this page goes away so the alert stops as soon as
+    // the agent accepts or dismisses the commitment. Scoped to the commitment
+    // page on purpose -- firing this from any Salesforce tab would cut an
+    // alert short whenever an unrelated tab was closed.
+    //
+    // Not sufficient on its own: a message sent from a closing page may never
+    // be delivered. The worker also watches tabs.onRemoved and holds a
+    // chrome.alarms backstop.
+    window.addEventListener("pagehide", function() {
+        sendToWorker({ type: "GONE" });
+    });
+}
 var debug = !1;
 
 function highlightLoop() {

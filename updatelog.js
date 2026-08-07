@@ -15,6 +15,12 @@
 // manifest.json -- otherwise the popup shows notes for a release nobody has.
 
 var RELEASES = [
+    { version: "2.1300", notes: [
+        "Alerts now play in the background with no pop-up window",
+        "Click the extension icon to stop an alert",
+        "Alerts stop on their own when the commitment closes",
+        "Tick 'Open a window' in settings if you use a YouTube link"
+    ]},
     { version: "2.1200", notes: [
         "Groundwork for upcoming alert improvements",
         "No change to how alerts work"

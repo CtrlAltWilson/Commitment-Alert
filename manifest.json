@@ -1,6 +1,6 @@
 {
   "name": "Commitment Alert!",
-  "version": "2.0800",
+  "version": "2.0900",
   "manifest_version": 3,
   "action": {
     "default_popup": "popup.html",
@@ -21,6 +21,7 @@
         "https://raptor--icagentconsole.na137.visual.force.com/apex/inContactAgentConsolePopout?mode=Classic"
       ],
       "js": [
+        "features.js",
         "libs/jquery/jquery-3.3.1.js",
         "DetectKeywordsEngine.js",
         "KeywordSet.js"

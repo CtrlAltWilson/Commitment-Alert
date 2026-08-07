@@ -1,0 +1,20 @@
+# Build output
+dist/
+
+# Extension signing keys -- NEVER commit these. A .pem derives the extension ID,
+# so anyone holding it can sign a CRX that Chrome accepts as this extension.
+# See vault Code-Analysis finding S1: one was committed to the `clean` branch.
+*.pem
+*.crx
+
+# Release artifacts belong in Gitea Releases, not in git
+*.zip
+
+# Visual Studio / IDE state
+.vs/
+*.suo
+*.user
+
+# OS noise
+.DS_Store
+Thumbs.db

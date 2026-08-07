@@ -1,3 +1,13 @@
+// Build-variant gate. In the no-Telegram build, hide the Telegram settings.
+// Uses a stylesheet with !important rather than removing the nodes, because
+// CurrentLink() calls $(".Tele_ID").show() and the save handler reads
+// #TeleID.value -- the elements must stay in the DOM, just never be visible.
+if (typeof FEATURES !== "undefined" && !FEATURES.telegram) {
+    var telegramHide = document.createElement("style");
+    telegramHide.textContent = ".Tele_ID, #telegramSettings { display: none !important; }";
+    document.head.appendChild(telegramHide);
+}
+
 var version = document.getElementById("versionCheck");
 
 function CurrentLink() {
@@ -61,7 +71,11 @@ version.innerHTML = "v" + chrome.runtime.getManifest().version, CurrentLink(), d
                 console.log("Telegram ID value is set to " + a)
             })), i = 1
         }
-        if (null == n.trim().match(/^[0-9]+$/)) {
+        // Only complain about the Telegram ID if the user actually typed one.
+        // Previously this fired whenever the field was empty -- i.e. on every
+        // save by anyone not using Telegram -- and in the no-Telegram build it
+        // would fire for a field the user cannot even see.
+        if ("" !== n.trim() && null == n.trim().match(/^[0-9]+$/)) {
             var r;
             (r = document.getElementById("Saved")).innerHTML = "Telegram ID can only be in numbers!", document.getElementsByTagName("body")[0].appendChild(r), setTimeout((function() {
                 r.innerHTML = ""

@@ -113,6 +113,8 @@ function RaptorCAIPBot(e) {
 }
 
 function RaptorRCBot(e) {
+    // Build-variant gate: the no-Telegram build makes no notify call at all.
+    if (typeof FEATURES === "undefined" || !FEATURES.telegram) return;
     chrome.storage.sync.get(["tid_mytext"], (function(t) {
         var o = t.tid_mytext,
             i = new XMLHttpRequest;

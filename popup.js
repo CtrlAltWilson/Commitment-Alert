@@ -1,144 +1,194 @@
-// Build-variant gate. In the no-Telegram build, hide the Telegram settings.
+// Popup settings UI.
+//
+// Rewritten 2026-08-07. The previous version was checked-in minifier output with
+// six separate DOMContentLoaded listeners and three near-identical handlers for
+// the little "x" reset buttons, each found with a brittle
+// document.querySelector('button[class="x"]') that broke if a second class was
+// ever added. Everything is now driven by the SETTINGS table below: to add a
+// field you add one row, not another copy-pasted block.
+
+// One row per stored setting. `key` is the chrome.storage.sync key; `input` is
+// the text box; `display` is the button showing the current value; `clear` is
+// the little "x" next to it (matched by data-clear="<key>" in popup.html).
+var SETTINGS = [{
+    key: "mytext",
+    input: "YTlink",
+    display: "linkM",
+    clear: "x",
+    feature: null,
+    // Shown when nothing is set. Falls back to the bundled sound.
+    fallbackSound: "melodyFinal.mp3",
+    validate: null
+}, {
+    key: "chat_mytext",
+    input: "Chat_YTlink",
+    display: "chat_linkM",
+    clear: "chat_x",
+    feature: null,
+    fallbackSound: "chat_melody.mp3",
+    validate: null
+}, {
+    key: "tid_mytext",
+    input: "TeleID",
+    display: "tele_idM",
+    clear: "t_x",
+    feature: "telegram",
+    fallbackSound: null,
+    validate: {
+        test: function(v) { return /^[0-9]+$/.test(v); },
+        message: "Telegram ID can only be in numbers!"
+    }
+}];
+
+function featureEnabled(name) {
+    if (!name) return true;
+    return typeof FEATURES !== "undefined" && !!FEATURES[name];
+}
+
+// Build-variant gate: hide the settings for features this build does not have.
 // Uses a stylesheet with !important rather than removing the nodes, because
-// CurrentLink() calls $(".Tele_ID").show() and the save handler reads
-// #TeleID.value -- the elements must stay in the DOM, just never be visible.
-if (typeof FEATURES !== "undefined" && !FEATURES.telegram) {
-    var telegramHide = document.createElement("style");
-    telegramHide.textContent = ".Tele_ID, #telegramSettings { display: none !important; }";
-    document.head.appendChild(telegramHide);
+// refresh() calls $(".Tele_ID").show() and the save handler reads #TeleID.value
+// -- the elements must stay in the DOM, just never be visible.
+if (!featureEnabled("telegram")) {
+    var hide = document.createElement("style");
+    hide.textContent = ".Tele_ID, #telegramSettings { display: none !important; }";
+    document.head.appendChild(hide);
 }
 
-var version = document.getElementById("versionCheck");
-
-function CurrentLink() {
-    chrome.storage.sync.get(["mytext", "chat_mytext", "tid_mytext"], (function(e) {
-        eraseText();
-        var t = document.getElementById("linkM");
-        if (void 0 === e.mytext || "" === e.mytext) t.innerHTML = '<a href="' + chrome.runtime.getURL("melodyFinal.mp3") + '" target="_blank" style="color: #696969;"> Default Sound </a>', $("#x").hide(), document.getElementById("linkM").style.margin = "0px 50px 0 50px";
-        else {
-            var n = domain_from_url(e.mytext);
-            t.innerHTML = '<a href="' + e.mytext + '" target="_blank" style="color: #696969;">' + n + "</a>", $("#x").show(), document.getElementById("linkM").style.margin = "0px 0px 0 50px"
-        }
-        var i = document.getElementById("chat_linkM");
-        if (void 0 === e.chat_mytext || "" === e.chat_mytext) i.innerHTML = '<a href="' + chrome.runtime.getURL("chat_melody.mp3") + '" target="_blank" style="color: #696969;"> Default Sound </a>', $("#chat_x").hide(), document.getElementById("chat_linkM").style.margin = "0px 50px 0 50px";
-        else {
-            var o = domain_from_url(e.chat_mytext);
-            i.innerHTML = '<a href="' + e.chat_mytext + '" target="_blank" style="color: #696969;">' + o + "</a>", $("#chat_x").show(), document.getElementById("chat_linkM").style.margin = "0px 0px 0 50px"
-        }
-        var c = document.getElementById("tele_idM");
-        void 0 === e.tid_mytext || "" === e.tid_mytext ? ($(".Tele_ID").hide(), $("#t_x").hide(), document.getElementById("tele_idM").style.margin = "0px 50px 0 50px") : ($(".Tele_ID").show(), $("#t_x").show(), c.innerHTML = '<a style="color: #696969;">' + e.tid_mytext + "</a>", document.getElementById("tele_idM").style.margin = "0px 0px 0 50px")
-    }))
+function flash(message, ms) {
+    var el = document.getElementById("Saved");
+    el.innerHTML = message;
+    setTimeout(function() { el.innerHTML = ""; }, ms || 1000);
 }
 
-function SavedLink() {
-    var e = document.getElementById("Saved");
-    e.innerHTML = "Saved!", setTimeout((function() {
-        e.innerHTML = ""
-    }), 1e3)
-}
-version.innerHTML = "v" + chrome.runtime.getManifest().version, CurrentLink(), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[type="submit"]').addEventListener("click", (function() {
-        var e = document.getElementById("YTlink").value,
-            t = document.getElementById("Chat_YTlink").value,
-            n = document.getElementById("TeleID").value,
-            i = 0;
-        if ("" === e.trim() && "" === t.trim() && "" === n.trim()) {
-            (r = document.getElementById("Saved")).innerHTML = "Nothing was typed!", document.getElementsByTagName("body")[0].appendChild(r), setTimeout((function() {
-                r.innerHTML = ""
-            }), 1e3)
-        }
-        if ("" != e.trim()) {
-            var o = e.trim();
-            chrome.storage.sync.set({
-                mytext: o
-            }, (function() {
-                console.log("Value is set to " + o)
-            })), i = 1
-        }
-        if ("" != t.trim()) {
-            var c = t.trim();
-            chrome.storage.sync.set({
-                chat_mytext: c
-            }, (function() {
-                console.log("Chat value is set to " + c)
-            })), i = 1
-        }
-        if ("" != n.trim() && null != n.trim().match(/^[0-9]+$/)) {
-            var a = n.trim();
-            chrome.storage.sync.set({
-                tid_mytext: a
-            }, (function() {
-                console.log("Telegram ID value is set to " + a)
-            })), i = 1
-        }
-        // Only complain about the Telegram ID if the user actually typed one.
-        // Previously this fired whenever the field was empty -- i.e. on every
-        // save by anyone not using Telegram -- and in the no-Telegram build it
-        // would fire for a field the user cannot even see.
-        if ("" !== n.trim() && null == n.trim().match(/^[0-9]+$/)) {
-            var r;
-            (r = document.getElementById("Saved")).innerHTML = "Telegram ID can only be in numbers!", document.getElementsByTagName("body")[0].appendChild(r), setTimeout((function() {
-                r.innerHTML = ""
-            }), 3e3)
-        }
-        i && (SavedLink(), CurrentLink())
-    }), !1)
-}), !1), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[type="default"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            mytext: ""
-        }, (function() {})), chrome.storage.sync.set({
-            chat_mytext: ""
-        }, (function() {})), chrome.storage.sync.set({
-            tid_mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1);
-var i, coll = document.getElementsByClassName("collapsible");
-for (i = 0; i < coll.length; i++) coll[i].addEventListener("click", (function() {
-    this.classList.toggle("active"), "block" === this.nextElementSibling.style.display ? $(".content").slideUp() : $(".content").slideDown()
-}));
-
-function eraseText() {
-    document.getElementById("YTlink").value = "", document.getElementById("Chat_YTlink").value = "", document.getElementById("TeleID").value = ""
+function domainFromUrl(url) {
+    var m = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im);
+    if (!m) return url;
+    var host = m[1];
+    var trimmed = host.match(/^[^\.]+\.(.+\..+)$/);
+    return trimmed ? trimmed[1] : host;
 }
 
-function domain_from_url(e) {
-    var t, n;
-    return (n = e.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im)) && (n = (t = n[1]).match(/^[^\.]+\.(.+\..+)$/)) && (t = n[1]), t
-}
-document.addEventListener("DOMContentLoaded", (function() {
-    for (var e = document.getElementsByTagName("plug"), t = 0; t < e.length; t++) ! function() {
-        var n = e[t],
-            i = n.href;
-        n.onclick = function() {
-            chrome.tabs.create({
-                active: !0,
-                url: i
-            })
+// Render the "currently set to" row for one setting.
+function renderSetting(setting, value) {
+    var display = document.getElementById(setting.display);
+    var clear = $("#" + setting.clear);
+    var isSet = value !== undefined && value !== "";
+
+    if (isSet) {
+        if (setting.fallbackSound) {
+            display.innerHTML = '<a href="' + value + '" target="_blank" style="color: #696969;">' +
+                domainFromUrl(value) + "</a>";
+        } else {
+            display.innerHTML = '<a style="color: #696969;">' + value + "</a>";
         }
-    }()
-})), $(document).ready((function() {
-    var e = 1;
-    $("#settings").click((function() {
-        1 === e ? ($(".aligncenter").slideUp(), $("#link_settings").slideDown(), e = 0) : ($(".aligncenter").slideDown(), $("#link_settings").slideUp(), e = 1)
-    }))
-})), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[class="x"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[class="chat_x"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            chat_mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[class="t_x"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            tid_mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1);
+        clear.show();
+        display.style.margin = "0px 0px 0 50px";
+    } else if (setting.fallbackSound) {
+        display.innerHTML = '<a href="' + chrome.runtime.getURL(setting.fallbackSound) +
+            '" target="_blank" style="color: #696969;"> Default Sound </a>';
+        clear.hide();
+        display.style.margin = "0px 50px 0 50px";
+    } else {
+        display.innerHTML = "";
+        clear.hide();
+        display.style.margin = "0px 50px 0 50px";
+    }
+
+    // The Telegram row is only shown once an ID has been set.
+    if (setting.key === "tid_mytext") {
+        isSet ? $(".Tele_ID").show() : $(".Tele_ID").hide();
+    }
+}
+
+// Re-read everything from storage and repaint. Also clears the input boxes, so
+// they always start empty rather than echoing the saved value.
+function refresh() {
+    var keys = SETTINGS.map(function(s) { return s.key; });
+    chrome.storage.sync.get(keys, function(stored) {
+        SETTINGS.forEach(function(setting) {
+            document.getElementById(setting.input).value = "";
+            renderSetting(setting, stored[setting.key]);
+        });
+    });
+}
+
+function save(key, value) {
+    var patch = {};
+    patch[key] = value;
+    chrome.storage.sync.set(patch, function() {});
+}
+
+// --- wiring ---------------------------------------------------------------
+
+document.getElementById("versionCheck").innerHTML = "v" + chrome.runtime.getManifest().version;
+refresh();
+
+// Save: write every field the user actually filled in.
+document.querySelector('button[type="submit"]').addEventListener("click", function() {
+    var saved = 0;
+    var error = null;
+
+    SETTINGS.forEach(function(setting) {
+        var value = document.getElementById(setting.input).value.trim();
+        if (value === "") return;
+        // Only complain about a malformed value if one was actually typed.
+        // This used to fire whenever the Telegram box was empty, i.e. on every
+        // save by anyone not using Telegram.
+        if (setting.validate && !setting.validate.test(value)) {
+            error = setting.validate.message;
+            return;
+        }
+        save(setting.key, value);
+        saved += 1;
+    });
+
+    if (error) {
+        flash(error, 3000);
+    } else if (saved > 0) {
+        flash("Saved!");
+        refresh();
+    } else {
+        flash("Nothing was typed!");
+    }
+});
+
+// Reset: clear every setting.
+document.querySelector('button[type="default"]').addEventListener("click", function() {
+    SETTINGS.forEach(function(setting) { save(setting.key, ""); });
+    flash("Saved!");
+    refresh();
+});
+
+// The little "x" buttons. One handler for all of them -- each button declares
+// which storage key it clears via data-clear in popup.html.
+Array.prototype.forEach.call(document.querySelectorAll("[data-clear]"), function(button) {
+    button.addEventListener("click", function() {
+        save(button.getAttribute("data-clear"), "");
+        flash("Saved!");
+        refresh();
+    });
+});
+
+// Version line expands the "what's new" panel.
+Array.prototype.forEach.call(document.getElementsByClassName("collapsible"), function(el) {
+    el.addEventListener("click", function() {
+        this.classList.toggle("active");
+        this.nextElementSibling.style.display === "block" ? $(".content").slideUp() : $(".content").slideDown();
+    });
+});
+
+// Gear icon toggles between the main view and the settings view.
+$(document).ready(function() {
+    var showingMain = true;
+    $("#settings").click(function() {
+        if (showingMain) {
+            $(".aligncenter").slideUp();
+            $("#link_settings").slideDown();
+        } else {
+            $(".aligncenter").slideDown();
+            $("#link_settings").slideUp();
+        }
+        showingMain = !showingMain;
+    });
+});

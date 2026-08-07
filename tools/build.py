@@ -67,9 +67,6 @@ FEATURE_REWRITES = {
         ("DetectKeywordsEngine.js",
          'const API_URL = "https://wilsonngo.com/api";',
          'const API_URL = "";'),
-        ("popup.html",
-         "https://wilsonngo.com/kb/commitment_alerts/telegram_alert.html",
-         "#"),
     ],
 }
 
@@ -77,15 +74,6 @@ FEATURE_REWRITES = {
 FEATURE_FORBIDDEN = {
     "telegram": ["wilsonngo.com"],
 }
-
-# Occurrences that are NOT functional dependencies and are exempt from the
-# forbidden check. Currently just the author attribution link in the popup
-# footer -- it is a byline, not a call, and removing it is Wilson's call to make.
-# If the PH team's request covers visible links too, delete this entry and add a
-# rewrite to FEATURE_REWRITES instead.
-FORBIDDEN_EXEMPT = [
-    '<a href="http://www.wilsonngo.com" target="_blank"> Designed and developed by Wilson </a>',
-]
 
 VARIANTS = {
     "plain": {
@@ -180,8 +168,6 @@ def verify(out_dir, variant):
             if "libs/" in path.relative_to(out_dir).as_posix():
                 continue
             text = path.read_text(encoding="utf-8", errors="ignore")
-            for exempt in FORBIDDEN_EXEMPT:
-                text = text.replace(exempt, "")
             for needle in forbidden:
                 if needle in text:
                     problems.append(

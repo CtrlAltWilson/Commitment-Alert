@@ -1,52 +1,98 @@
-var link, debug_sound = 0;
+// Alert launcher.
+//
+// Rewritten 2026-08-07. The commitment and chat paths were two copies of the
+// same logic inside a stack of nested ifs and comma-sequenced expressions, with
+// the alert kind passed as a bare 1 or 0. They are now one code path driven by
+// the ALERTS table: adding a third alert type is a table entry, not another
+// branch.
+
+// Set to 1 to bypass the once-per-minute debounce while testing.
+var debug_sound = 0;
+
 // Only used by the Telegram notify call, which the no-Telegram build gates off.
 const API_URL = "https://wilsonngo.com/api";
 
-function launchLink(e) {
-    chrome.storage.sync.get(["enabledDisabled", "mytext", "chat_mytext", "endTime", "tid_mytext"], (function(t) {
-        // Was: enabledDisabled && (blocked === 0 || chat_mytext === "5282").
-        // blacklist() only ever set blocked to 0 (its blocklist array was always
-        // empty), so the extra clause could never change the outcome.
-        if (!0 === t.enabledDisabled) {
-            var o = 0,
-                i = (new Date).getTime(),
-                n = 1;
-            if ((void 0 === t.endTime || "" === t.endTime || t.endTime < i || 1 === debug_sound) && (chrome.storage.sync.set({
-                    endTime: i + 6e4
-                }, (function() {})), o = 1), void 0 !== t.tid_mytext && "" !== t.tid_mytext || (n = 0), 1 === o) {
-                if (1 === e)
-                    if (void 0 === t.mytext || "" === t.mytext) {
-                        var r = chrome.runtime.getURL("melodyFinal.mp3");
-                        window.open(r, "Commitment", "resizable,scrollbars,status")
-                    } else {
-                        link = t.mytext;
-                        window.open(link, "Commitment", "resizable,scrollbars,status")
-                    }
-                else if (0 === e)
-                    if (void 0 === t.chat_mytext || "" === t.chat_mytext || "5282" === t.chat_mytext) {
-                        var s = chrome.runtime.getURL("chat_melody.mp3");
-                        window.open(s, "Chat", "resizable,scrollbars,status")
-                    } else {
-                        link = t.chat_mytext;
-                        window.open(link, "Chat", "resizable,scrollbars,status")
-                    } n && RaptorRCBot(e)
-            }
-        }
-    }))
+// One alert per minute, shared across every tab and frame via storage.sync.
+// This is what stops eight open Salesforce tabs firing eight alerts.
+const ALERT_COOLDOWN_MS = 60000;
+
+// Legacy sentinel: a chat link of exactly "5282" means "use the default sound".
+// Preserved because it may be saved in someone's synced settings.
+const USE_DEFAULT_SOUND = "5282";
+
+const ALERTS = {
+    commitment: {
+        linkKey: "mytext",
+        sound: "melodyFinal.mp3",
+        windowName: "Commitment",
+        message: "You have a commitment!"
+    },
+    chat: {
+        linkKey: "chat_mytext",
+        sound: "chat_melody.mp3",
+        windowName: "Chat",
+        message: "You have a chat!"
+    }
+};
+
+// True if enough time has passed since the last alert. Claims the slot as a
+// side effect so a second caller in the same instant loses the race.
+function claimAlertSlot(endTime) {
+    const now = Date.now();
+    const ready = endTime === undefined || endTime === "" || endTime < now || debug_sound === 1;
+    if (!ready) return false;
+    chrome.storage.sync.set({ endTime: now + ALERT_COOLDOWN_MS }, function() {});
+    return true;
 }
 
-function RaptorRCBot(e) {
+// What the user configured for this alert, or the bundled sound if nothing is
+// set (or if the legacy "use default" sentinel is stored).
+function alertTarget(alert, stored) {
+    const configured = stored[alert.linkKey];
+    if (configured === undefined || configured === "" || configured === USE_DEFAULT_SOUND) {
+        return chrome.runtime.getURL(alert.sound);
+    }
+    return configured;
+}
+
+// kind: "commitment" | "chat"
+function launchLink(kind) {
+    const alert = ALERTS[kind];
+    if (!alert) return;
+
+    chrome.storage.sync.get(
+        ["enabledDisabled", "endTime", "tid_mytext", alert.linkKey],
+        function(stored) {
+            if (stored.enabledDisabled !== true) return;
+            // Was: enabledDisabled && (blocked === 0 || chat_mytext === "5282").
+            // blacklist() only ever set blocked to 0 (its blocklist array was
+            // always empty), so the extra clause could never change the outcome.
+            if (!claimAlertSlot(stored.endTime)) return;
+
+            window.open(alertTarget(alert, stored), alert.windowName, "resizable,scrollbars,status");
+
+            if (stored.tid_mytext) notifyTelegram(alert, stored.tid_mytext);
+        }
+    );
+}
+
+function notifyTelegram(alert, chatId) {
     // Build-variant gate: the no-Telegram build makes no notify call at all.
     if (typeof FEATURES === "undefined" || !FEATURES.telegram) return;
-    chrome.storage.sync.get(["tid_mytext"], (function(t) {
-        var o = t.tid_mytext,
-            i = new XMLHttpRequest;
-        if (i.open("POST", `${API_URL}/v1/sendgram`), i.setRequestHeader("Content-Type", "application/json"), i.onreadystatechange = function() {
-                4 === i.readyState && (console.log(i.status), console.log(i.responseText))
-            }, 0 === e) t = {chatid: o, app: 'commitment_alert', message: 'You have a chat!'};
-        else t = {chatid: o, app: 'commitment_alert', message: 'You have a commitment!'};
-        i.send(JSON.stringify(t))
-    }))
+
+    const request = new XMLHttpRequest();
+    request.open("POST", `${API_URL}/v1/sendgram`);
+    request.setRequestHeader("Content-Type", "application/json");
+    request.onreadystatechange = function() {
+        if (request.readyState === 4 && request.status !== 200) {
+            console.log("sendgram failed", request.status, request.responseText);
+        }
+    };
+    request.send(JSON.stringify({
+        chatid: chatId,
+        app: "commitment_alert",
+        message: alert.message
+    }));
 }
 
 function HighlightEngine() {
@@ -74,7 +120,7 @@ function HighlightEngine() {
                             }
                             if (null != wordColor[l]) {
                                 var c = document.createElement("EM");
-                                if (c.className = e, c.appendChild(document.createTextNode(regs[0])), launchLink(0), c.style = r ? "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;-webkit-print-color-adjust:exact;" : "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;", wordColor[l].Color && (c.style.backgroundColor = wordColor[l].Color), wordColor[l].Fcolor && (c.style.color = wordColor[l].Fcolor), c.setAttribute("match", wordColor[l].word), c.setAttribute("loopNumber", g), c.style.fontStyle = "inherit", !s || s && wordColor[l].ShowInEditableFields) {
+                                if (c.className = e, c.appendChild(document.createTextNode(regs[0])), launchLink("chat"), c.style = r ? "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;-webkit-print-color-adjust:exact;" : "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;", wordColor[l].Color && (c.style.backgroundColor = wordColor[l].Color), wordColor[l].Fcolor && (c.style.color = wordColor[l].Fcolor), c.setAttribute("match", wordColor[l].word), c.setAttribute("loopNumber", g), c.style.fontStyle = "inherit", !s || s && wordColor[l].ShowInEditableFields) {
                                     var m = n.splitText(regs.index);
                                     m.nodeValue = m.nodeValue.substring(regs[0].length), n.parentNode.insertBefore(c, m)
                                 }
@@ -107,7 +153,7 @@ function HighlightEngine() {
         }
     }
 }
-window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1 && launchLink(1);
+window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1 && launchLink("commitment");
 var debug = !1;
 
 function highlightLoop() {

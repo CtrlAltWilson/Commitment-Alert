@@ -21,28 +21,62 @@
       <div class="separator"> ____________________</div>
       <br>
       <div class="settings_frame"> <a href="#" id="settings" class="settings"><img class="setting_img" src="assets/images/settings.png"></a></div>
+
       <div id="link_settings">
-         <div class="CurrentLinkBox">
-            <br>
-            <div class="Cur_Commit"> <b>Current Commitment Alert:</b> <br><button id="linkM"></button> <button type="x" class="x" id="x" data-clear="mytext" title="Reset to the default sound">x</button> <br></div>
-            <br>
-            <div class="Chat_Cur_Commit"> <b>Current Chat Alert:</b> <br><button id="chat_linkM"></button> <button type="x" class="chat_x" id="chat_x" data-clear="chat_mytext" title="Reset to the default sound">x</button> <br></div>
-            <br>
-            <div class="Tele_ID"> <b>Telegram ID:</b> <br><button id="tele_idM"></button> <button type="x" class="t_x" id="t_x" data-clear="tid_mytext" title="Remove the Telegram ID">x</button> <br></div>
-            <br>
+         <!-- One card per setting. The value, the edit control and the reset
+              control live together, so there is no separate input block and no
+              global Save to wonder about. -->
+         <div class="card" id="card_mytext">
+            <div class="cardTitle">Commitment Alert</div>
+            <div class="cardRow">
+               <span class="cardValue" id="val_mytext"></span>
+               <button class="iconBtn" data-edit="mytext" title="Change this alert">&#9998;</button>
+               <button class="iconBtn danger" data-clear="mytext" title="Reset to the default sound">&#10006;</button>
+            </div>
+            <div class="cardEdit" id="edit_mytext">
+               <input type="text" id="in_mytext" placeholder="https://">
+               <button class="miniBtn" data-save="mytext">Save</button>
+               <button class="miniBtn ghost" data-cancel="mytext">Cancel</button>
+            </div>
+            <label class="modeLabel"><input type="checkbox" data-mode="windowMode"> Open in a window</label>
+            <div class="cardNote" id="note_mytext"></div>
          </div>
-         <div id="textBox"> Commitment Alert Link: <br><input type="text" id="YTlink" name="YTlink" placeholder="https://"> <br><br>Chat Alert Link: <br><input type="text" id="Chat_YTlink" name="Chat_YTlink" placeholder="https://"> <br><br><span id="telegramSettings">Telegram ID: <br><input type="text" id="TeleID" name="TeleID" placeholder=""></span> </div>
-         &nbsp;
-         <div id="modeBox">
-            <label><input type="checkbox" id="windowMode" data-mode="windowMode"> Open a window for commitments</label><br>
-            <label><input type="checkbox" id="chat_windowMode" data-mode="chat_windowMode"> Open a window for chats</label><br>
-            <small id="modeHint"></small>
+
+         <div class="card" id="card_chat_mytext">
+            <div class="cardTitle">Chat Alert</div>
+            <div class="cardRow">
+               <span class="cardValue" id="val_chat_mytext"></span>
+               <button class="iconBtn" data-edit="chat_mytext" title="Change this alert">&#9998;</button>
+               <button class="iconBtn danger" data-clear="chat_mytext" title="Reset to the default sound">&#10006;</button>
+            </div>
+            <div class="cardEdit" id="edit_chat_mytext">
+               <input type="text" id="in_chat_mytext" placeholder="https://">
+               <button class="miniBtn" data-save="chat_mytext">Save</button>
+               <button class="miniBtn ghost" data-cancel="chat_mytext">Cancel</button>
+            </div>
+            <label class="modeLabel"><input type="checkbox" data-mode="chat_windowMode"> Open in a window</label>
+            <div class="cardNote" id="note_chat_mytext"></div>
          </div>
-         &nbsp;
-         <div id="Buttons"> <button type="submit">Save</button> &nbsp;&nbsp;&nbsp; <button type="default">Reset</button> </div>
+
+         <div class="card" id="card_tid_mytext">
+            <div class="cardTitle">Telegram ID</div>
+            <div class="cardRow">
+               <span class="cardValue" id="val_tid_mytext"></span>
+               <button class="iconBtn" data-edit="tid_mytext" title="Change your Telegram ID">&#9998;</button>
+               <button class="iconBtn danger" data-clear="tid_mytext" title="Remove your Telegram ID">&#10006;</button>
+            </div>
+            <div class="cardEdit" id="edit_tid_mytext">
+               <input type="text" id="in_tid_mytext" placeholder="numbers only">
+               <button class="miniBtn" data-save="tid_mytext">Save</button>
+               <button class="miniBtn ghost" data-cancel="tid_mytext">Cancel</button>
+            </div>
+         </div>
+
+         <p id="Saved"></p>
+         <div id="Buttons"> <button type="default">Reset everything</button> </div>
       </div>
-      <p id="Saved" style="text-align: center"></p>
-      <p button type="button" class="collapsible" id="versionCheck" style="text-align: center"></p>
+
+      <p button type="button" class="collapsible" id="versionCheck"></p>
       <div class="content">
          <br><b> Note: </b> <br>Please have at least one window with Salesforce visible on screen else the chat alert will not work. <br><br><b> What's new: </b> <br>
          <div class="update"></div>

@@ -1,42 +1,41 @@
 // Popup settings UI.
 //
-// Rewritten 2026-08-07. The previous version was checked-in minifier output with
-// six separate DOMContentLoaded listeners and three near-identical handlers for
-// the little "x" reset buttons, each found with a brittle
-// document.querySelector('button[class="x"]') that broke if a second class was
-// ever added. Everything is now driven by the SETTINGS table below: to add a
-// field you add one row, not another copy-pasted block.
+// Rewritten 2026-08-08 around one card per setting: the current value, the
+// pencil that edits it and the red x that resets it all sit together. The
+// previous layout put three inputs in one block with a global Save underneath,
+// which read as though Save also applied the checkboxes -- it didn't, because
+// they save on change, so clicking Save reported "Nothing was typed!".
+//
+// Everything is driven by the SETTINGS table. To add a field, add a row here
+// and a card in popup.html.
 
-// One row per stored setting. `key` is the chrome.storage.sync key; `input` is
-// the text box; `display` is the button showing the current value; `clear` is
-// the little "x" next to it (matched by data-clear="<key>" in popup.html).
 var SETTINGS = [{
     key: "mytext",
-    input: "YTlink",
-    display: "linkM",
-    clear: "x",
-    feature: null,
-    // Shown when nothing is set. Falls back to the bundled sound.
+    modeKey: "windowMode",
+    // Shown when nothing is set; the alert falls back to this bundled sound.
+    fallbackLabel: "Default Sound",
     fallbackSound: "melodyFinal.mp3",
+    isLink: true,
+    feature: null,
     validate: null
 }, {
     key: "chat_mytext",
-    input: "Chat_YTlink",
-    display: "chat_linkM",
-    clear: "chat_x",
-    feature: null,
+    modeKey: "chat_windowMode",
+    fallbackLabel: "Default Sound",
     fallbackSound: "chat_melody.mp3",
+    isLink: true,
+    feature: null,
     validate: null
 }, {
     key: "tid_mytext",
-    input: "TeleID",
-    display: "tele_idM",
-    clear: "t_x",
-    feature: "telegram",
+    modeKey: null,
+    fallbackLabel: "Not set",
     fallbackSound: null,
+    isLink: false,
+    feature: "telegram",
     validate: {
         test: function(v) { return /^[0-9]+$/.test(v); },
-        message: "Telegram ID can only be in numbers!"
+        message: "Telegram ID can only be numbers"
     }
 }];
 
@@ -45,20 +44,19 @@ function featureEnabled(name) {
     return typeof FEATURES !== "undefined" && !!FEATURES[name];
 }
 
-// Build-variant gate: hide the settings for features this build does not have.
-// Uses a stylesheet with !important rather than removing the nodes, because
-// refresh() calls $(".Tele_ID").show() and the save handler reads #TeleID.value
-// -- the elements must stay in the DOM, just never be visible.
+// Build-variant gate: the no-Telegram build hides that card entirely.
 if (!featureEnabled("telegram")) {
     var hide = document.createElement("style");
-    hide.textContent = ".Tele_ID, #telegramSettings { display: none !important; }";
+    hide.textContent = "#card_tid_mytext { display: none !important; }";
     document.head.appendChild(hide);
 }
 
+function el(id) { return document.getElementById(id); }
+
 function flash(message, ms) {
-    var el = document.getElementById("Saved");
-    el.innerHTML = message;
-    setTimeout(function() { el.innerHTML = ""; }, ms || 1000);
+    var box = el("Saved");
+    box.textContent = message;
+    setTimeout(function() { box.textContent = ""; }, ms || 1200);
 }
 
 function domainFromUrl(url) {
@@ -69,169 +67,153 @@ function domainFromUrl(url) {
     return trimmed ? trimmed[1] : host;
 }
 
-// Render the "currently set to" row for one setting.
-function renderSetting(setting, value) {
-    var display = document.getElementById(setting.display);
-    var clear = $("#" + setting.clear);
-    var isSet = value !== undefined && value !== "";
-
-    if (isSet) {
-        if (setting.fallbackSound) {
-            display.innerHTML = '<a href="' + value + '" target="_blank" style="color: #696969;">' +
-                domainFromUrl(value) + "</a>";
-        } else {
-            display.innerHTML = '<a style="color: #696969;">' + value + "</a>";
-        }
-        clear.show();
-        display.style.margin = "0px 0px 0 50px";
-    } else if (setting.fallbackSound) {
-        display.innerHTML = '<a href="' + chrome.runtime.getURL(setting.fallbackSound) +
-            '" target="_blank" style="color: #696969;"> Default Sound </a>';
-        clear.hide();
-        display.style.margin = "0px 50px 0 50px";
-    } else {
-        display.innerHTML = "";
-        clear.hide();
-        display.style.margin = "0px 50px 0 50px";
-    }
-
-    // The Telegram row is only shown once an ID has been set.
-    if (setting.key === "tid_mytext") {
-        isSet ? $(".Tele_ID").show() : $(".Tele_ID").hide();
-    }
-}
-
-// Re-read everything from storage and repaint. Also clears the input boxes, so
-// they always start empty rather than echoing the saved value.
-function refresh() {
-    var keys = SETTINGS.map(function(s) { return s.key; });
-    chrome.storage.sync.get(keys, function(stored) {
-        SETTINGS.forEach(function(setting) {
-            document.getElementById(setting.input).value = "";
-            renderSetting(setting, stored[setting.key]);
-        });
-    });
-}
-
 function save(key, value) {
     var patch = {};
     patch[key] = value;
     chrome.storage.sync.set(patch, function() {});
 }
 
-// Which alerts open a visible window instead of playing invisibly. A link can
-// only be shown in a window -- a YouTube page is not audio -- so ticking one of
-// these is how a configured link actually gets used.
-var MODES = [
-    { key: "windowMode", input: "windowMode", linkKey: "mytext" },
-    { key: "chat_windowMode", input: "chat_windowMode", linkKey: "chat_mytext" }
-];
+// --- rendering --------------------------------------------------------------
 
-function refreshModes() {
-    var keys = MODES.map(function(m) { return m.key; })
-        .concat(MODES.map(function(m) { return m.linkKey; }));
+function render() {
+    var keys = [];
+    SETTINGS.forEach(function(s) {
+        keys.push(s.key);
+        if (s.modeKey) keys.push(s.modeKey);
+    });
+
     chrome.storage.sync.get(keys, function(stored) {
-        var strandedLink = false;
-        MODES.forEach(function(mode) {
-            var on = stored[mode.key] === true;
-            document.getElementById(mode.input).checked = on;
-            var link = stored[mode.linkKey];
-            // A link is set but the alert plays invisibly, so the link is
-            // being ignored. Say so rather than silently dropping it.
-            if (!on && link !== undefined && link !== "") strandedLink = true;
+        SETTINGS.forEach(function(setting) {
+            var value = stored[setting.key];
+            var isSet = value !== undefined && value !== "";
+
+            var display = el("val_" + setting.key);
+            display.textContent = isSet
+                ? (setting.isLink ? domainFromUrl(value) : value)
+                : setting.fallbackLabel;
+            display.title = isSet ? value : setting.fallbackLabel;
+            display.className = isSet ? "cardValue" : "cardValue muted";
+
+            // The reset control only makes sense once something is set.
+            var clear = document.querySelector('[data-clear="' + setting.key + '"]');
+            if (clear) clear.style.visibility = isSet ? "visible" : "hidden";
+
+            if (!setting.modeKey) return;
+
+            // Window mode is the default -- undefined means on. Only an
+            // explicit false turns it off.
+            var windowMode = stored[setting.modeKey] !== false;
+            var box = document.querySelector('[data-mode="' + setting.modeKey + '"]');
+            if (box) box.checked = windowMode;
+
+            // A link is a web page, and a web page cannot be played invisibly.
+            // Say so rather than silently ignoring what the user configured.
+            var note = el("note_" + setting.key);
+            if (note) {
+                note.textContent = (!windowMode && isSet)
+                    ? "Playing the default sound instead — a link needs a window."
+                    : "";
+            }
         });
-        document.getElementById("modeHint").textContent = strandedLink
-            ? "Your link is not being used — tick the box above to open it in a window."
-            : "Unticked = the alert sound plays in the background, with no window.";
     });
 }
 
-MODES.forEach(function(mode) {
-    document.getElementById(mode.input).addEventListener("change", function() {
-        save(mode.key, this.checked);
-        refreshModes();
+function openEditor(setting) {
+    chrome.storage.sync.get([setting.key], function(stored) {
+        var input = el("in_" + setting.key);
+        input.value = stored[setting.key] || "";
+        el("edit_" + setting.key).classList.add("open");
+        input.focus();
+        input.select();
     });
+}
+
+function closeEditor(setting) {
+    el("edit_" + setting.key).classList.remove("open");
+}
+
+function commitEditor(setting) {
+    var value = el("in_" + setting.key).value.trim();
+
+    if (value !== "" && setting.validate && !setting.validate.test(value)) {
+        flash(setting.validate.message, 2500);
+        return;
+    }
+    save(setting.key, value);
+    closeEditor(setting);
+    render();
+    flash(value === "" ? "Reset to default" : "Saved");
+}
+
+// --- wiring -----------------------------------------------------------------
+
+el("versionCheck").textContent = "v" + chrome.runtime.getManifest().version;
+
+SETTINGS.forEach(function(setting) {
+    var edit = document.querySelector('[data-edit="' + setting.key + '"]');
+    if (edit) edit.addEventListener("click", function() { openEditor(setting); });
+
+    var doSave = document.querySelector('[data-save="' + setting.key + '"]');
+    if (doSave) doSave.addEventListener("click", function() { commitEditor(setting); });
+
+    var cancel = document.querySelector('[data-cancel="' + setting.key + '"]');
+    if (cancel) cancel.addEventListener("click", function() { closeEditor(setting); });
+
+    var clear = document.querySelector('[data-clear="' + setting.key + '"]');
+    if (clear) clear.addEventListener("click", function() {
+        save(setting.key, "");
+        closeEditor(setting);
+        render();
+        flash("Reset to default");
+    });
+
+    // Enter saves, Escape cancels -- the popup is small and closes easily, so
+    // reaching for the mouse to confirm a one-line edit is a nuisance.
+    var input = el("in_" + setting.key);
+    if (input) input.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") { event.preventDefault(); commitEditor(setting); }
+        if (event.key === "Escape") { event.preventDefault(); closeEditor(setting); }
+    });
+
+    if (!setting.modeKey) return;
+    var box = document.querySelector('[data-mode="' + setting.modeKey + '"]');
+    if (box) box.addEventListener("change", function() {
+        // Stored explicitly so "off" survives the default-on rule.
+        save(setting.modeKey, this.checked);
+        render();
+        flash("Saved");
+    });
+});
+
+el("Buttons").querySelector('button[type="default"]').addEventListener("click", function() {
+    SETTINGS.forEach(function(setting) {
+        save(setting.key, "");
+        if (setting.modeKey) save(setting.modeKey, true);
+        closeEditor(setting);
+    });
+    render();
+    flash("Everything reset");
 });
 
 // Point the cloud button at whatever the config endpoint last told us. The
 // href in popup.html is the offline fallback, so a failed lookup or an
 // unreachable server leaves the button working exactly as before.
-function refreshCloudLink() {
-    try {
-        chrome.runtime.sendMessage({ type: "GET_CONFIG" }, function(config) {
-            void chrome.runtime.lastError;
-            if (!config || !config.testPageUrl) return;
-            // Never navigate to whatever a server hands back unchecked: this
-            // link is opened by the whole Support team.
-            if (!/^https:\/\//i.test(config.testPageUrl)) return;
-            document.getElementById("reopenCommitment").href = config.testPageUrl;
-        });
-    } catch (e) {
-        // Worker unavailable; the fallback href stands.
-    }
+try {
+    chrome.runtime.sendMessage({ type: "GET_CONFIG" }, function(config) {
+        void chrome.runtime.lastError;
+        if (!config || !config.testPageUrl) return;
+        // Never navigate to whatever a server hands back unchecked: this link
+        // is opened by the whole Support team.
+        if (!/^https:\/\//i.test(config.testPageUrl)) return;
+        el("reopenCommitment").href = config.testPageUrl;
+    });
+} catch (e) {
+    // Worker unavailable; the fallback href stands.
 }
 
-// --- wiring ---------------------------------------------------------------
-
-document.getElementById("versionCheck").innerHTML = "v" + chrome.runtime.getManifest().version;
-refresh();
-refreshModes();
-refreshCloudLink();
-
-// Save: write every field the user actually filled in.
-document.querySelector('button[type="submit"]').addEventListener("click", function() {
-    var saved = 0;
-    var error = null;
-
-    SETTINGS.forEach(function(setting) {
-        var value = document.getElementById(setting.input).value.trim();
-        if (value === "") return;
-        // Only complain about a malformed value if one was actually typed.
-        // This used to fire whenever the Telegram box was empty, i.e. on every
-        // save by anyone not using Telegram.
-        if (setting.validate && !setting.validate.test(value)) {
-            error = setting.validate.message;
-            return;
-        }
-        save(setting.key, value);
-        saved += 1;
-    });
-
-    if (error) {
-        flash(error, 3000);
-    } else if (saved > 0) {
-        flash("Saved!");
-        refresh();
-        refreshModes();
-    } else {
-        flash("Nothing was typed!");
-    }
-});
-
-// Reset: clear every setting.
-document.querySelector('button[type="default"]').addEventListener("click", function() {
-    SETTINGS.forEach(function(setting) { save(setting.key, ""); });
-    // Back to the default: invisible sound, no window.
-    MODES.forEach(function(mode) { save(mode.key, false); });
-    flash("Saved!");
-    refresh();
-    refreshModes();
-});
-
-// The little "x" buttons. One handler for all of them -- each button declares
-// which storage key it clears via data-clear in popup.html.
-Array.prototype.forEach.call(document.querySelectorAll("[data-clear]"), function(button) {
-    button.addEventListener("click", function() {
-        save(button.getAttribute("data-clear"), "");
-        flash("Saved!");
-        refresh();
-        refreshModes();
-    });
-});
-
 // Version line expands the "what's new" panel.
-Array.prototype.forEach.call(document.getElementsByClassName("collapsible"), function(el) {
-    el.addEventListener("click", function() {
+Array.prototype.forEach.call(document.getElementsByClassName("collapsible"), function(node) {
+    node.addEventListener("click", function() {
         this.classList.toggle("active");
         this.nextElementSibling.style.display === "block" ? $(".content").slideUp() : $(".content").slideDown();
     });
@@ -251,3 +233,5 @@ $(document).ready(function() {
         showingMain = !showingMain;
     });
 });
+
+render();

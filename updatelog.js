@@ -15,6 +15,12 @@
 // manifest.json -- otherwise the popup shows notes for a release nobody has.
 
 var RELEASES = [
+    { version: "2.1400", notes: [
+        "Your alert link is used again straight away - no checkbox needed",
+        "Settings redesigned: edit with the pencil, reset with the red x",
+        "Untick 'Open in a window' if you want the sound only, with no pop-up",
+        "Fixed the cut-off version number and the spacing"
+    ]},
     { version: "2.1300", notes: [
         "Alerts now play in the background with no pop-up window",
         "Click the extension icon to stop an alert",

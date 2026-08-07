@@ -79,7 +79,11 @@ function decideAlert(kind, stored, resolveUrl) {
 
     const link = stored[alert.linkKey];
     const hasLink = link !== undefined && link !== "" && link !== USE_DEFAULT_SOUND;
-    const wantsWindow = stored[alert.modeKey] === true;
+    // Window mode is the DEFAULT (changed in v2.1400 after testing). Only an
+    // explicit false turns it off, so a freshly installed extension -- and
+    // anyone who sets a link without touching the checkbox -- behaves the way
+    // the extension always has.
+    const wantsWindow = stored[alert.modeKey] !== false;
 
     if (wantsWindow) {
         return {
@@ -273,21 +277,21 @@ chrome.alarms.onAlarm.addListener(alarm => {
     if (alarm.name === "alert-timeout") stopAlert();
 });
 
-// One-time migration. Anyone who already had an alert link was, by definition,
-// getting a window -- keep them on window mode so nothing changes under them.
-// Everyone else moves to the new invisible default.
+// v2.1300 briefly made invisible the default and wrote windowMode:false for
+// anyone without a link. v2.1400 reverses that: a window is the default again,
+// and invisible is opt-in. Clearing the stored flags puts everyone back on the
+// default rather than leaving them on a setting they never chose.
+//
+// Safe to do bluntly because v2.1300 never went past testing. Do NOT reuse
+// this pattern once a release has reached the team -- it discards a real user
+// choice along with the accidental one.
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.sync.get(
-        ["mytext", "chat_mytext", "windowMode", "chat_windowMode", "modeMigrated"],
-        stored => {
-            if (stored.modeMigrated) return;
-            chrome.storage.sync.set({
-                windowMode: !!(stored.mytext && stored.mytext !== ""),
-                chat_windowMode: !!(stored.chat_mytext && stored.chat_mytext !== ""),
-                modeMigrated: true
-            });
-        }
-    );
+    chrome.storage.sync.get(["modeDefaultReset"], stored => {
+        if (stored.modeDefaultReset) return;
+        chrome.storage.sync.remove(["windowMode", "chat_windowMode", "modeMigrated"], () => {
+            chrome.storage.sync.set({ modeDefaultReset: true });
+        });
+    });
     // Clear any badge left over from an interrupted alert.
     chrome.action.setBadgeText({ text: "" });
     chrome.action.setPopup({ popup: "popup.html" });

@@ -16,49 +16,47 @@ const { check, done } = stub.reporter();
 const resolve = p => "chrome-extension://TESTID/" + p;
 const decide = (kind, stored) => decideAlert(kind, stored, resolve);
 
-// --- default: invisible sound ----------------------------------------------
-let d = decide("commitment", {});
-check("commitment with nothing configured plays the bundled sound invisibly",
-    d.mode === "sound" && d.url.endsWith("melodyFinal.mp3"));
+// --- default is a window (v2.1400) ------------------------------------------
+// A configured link must be used without the user touching a checkbox; that was
+// the v2.1300 complaint -- a YouTube link silently played the default melody.
+let d = decide("commitment", { mytext: "https://www.youtube.com/watch?v=abc" });
+check("a link is opened by default, with no checkbox touched",
+    d.mode === "window" && d.url === "https://www.youtube.com/watch?v=abc");
 
-d = decide("chat", {});
-check("chat with nothing configured plays the bundled chat sound invisibly",
-    d.mode === "sound" && d.url.endsWith("chat_melody.mp3"));
-
-// --- window mode ------------------------------------------------------------
-d = decide("commitment", { windowMode: true, mytext: "https://youtu.be/abc" });
-check("window mode with a link opens the link",
-    d.mode === "window" && d.url === "https://youtu.be/abc");
-
-d = decide("commitment", { windowMode: true });
-check("window mode with no link opens the bundled sound in a window (old behaviour)",
+d = decide("commitment", {});
+check("no link configured opens the bundled sound in a window by default",
     d.mode === "window" && d.url.endsWith("melodyFinal.mp3"));
 
+d = decide("chat", {});
+check("chat defaults to a window with the bundled chat sound",
+    d.mode === "window" && d.url.endsWith("chat_melody.mp3"));
+
+// --- invisible is opt-in ----------------------------------------------------
+d = decide("commitment", { windowMode: false });
+check("explicitly unticking the box plays invisibly",
+    d.mode === "sound" && d.url.endsWith("melodyFinal.mp3"));
+
 // --- a link cannot be played invisibly --------------------------------------
-d = decide("commitment", { mytext: "https://youtu.be/abc" });
-check("a link with window mode OFF falls back to the bundled sound, not the link",
+d = decide("commitment", { windowMode: false, mytext: "https://youtu.be/abc" });
+check("invisible mode with a link falls back to the bundled sound, not the link",
     d.mode === "sound" && d.url.endsWith("melodyFinal.mp3"));
 
 // --- the two alert kinds are independent ------------------------------------
-d = decide("chat", { windowMode: true, chat_mytext: "https://youtu.be/chat" });
-check("commitment window mode does not leak into chat",
-    d.mode === "sound");
-
-d = decide("chat", { chat_windowMode: true, chat_mytext: "https://youtu.be/chat" });
-check("chat uses its own mode flag and its own link",
+d = decide("chat", { windowMode: false, chat_mytext: "https://youtu.be/chat" });
+check("commitment invisible mode does not leak into chat",
     d.mode === "window" && d.url === "https://youtu.be/chat");
 
+d = decide("chat", { chat_windowMode: false, chat_mytext: "https://youtu.be/chat" });
+check("chat uses its own mode flag and its own link",
+    d.mode === "sound");
+
 // --- legacy sentinel --------------------------------------------------------
-d = decide("chat", { chat_windowMode: true, chat_mytext: "5282" });
+d = decide("chat", { chat_mytext: "5282" });
 check("legacy 5282 sentinel is treated as 'no link', not as a URL",
     d.mode === "window" && d.url.endsWith("chat_melody.mp3"));
 
-d = decide("chat", { chat_mytext: "5282" });
-check("legacy 5282 sentinel with window mode off plays the default sound",
-    d.mode === "sound" && d.url.endsWith("chat_melody.mp3"));
-
 // --- empty string is not a link --------------------------------------------
-d = decide("commitment", { windowMode: true, mytext: "" });
+d = decide("commitment", { mytext: "" });
 check("an empty link string is treated as unset",
     d.mode === "window" && d.url.endsWith("melodyFinal.mp3"));
 

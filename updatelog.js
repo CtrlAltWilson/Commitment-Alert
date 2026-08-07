@@ -3,8 +3,9 @@
 // have. Chrome compares each dot-separated part as a number, so 2.0900 < 2.1000;
 // do NOT "tidy" this into 2.9.0, which would compare as LOWER than 2.0800 and
 // break updates for everyone already installed.
-var ext_version = ["v2.0900", "v2.0800", "v2.0700","v2.0600", "v2.0500", "v2.0400", "v2.0300", "v2.0200", "v2.0100", "v2.0000", "v1.9001", "v1.9000 It's over 9000!", "v1.8904", "v1.8903", "v1.8902"],
+var ext_version = ["v2.1000", "v2.0900", "v2.0800", "v2.0700","v2.0600", "v2.0500", "v2.0400", "v2.0300", "v2.0200", "v2.0100", "v2.0000", "v1.9001", "v1.9000 It's over 9000!", "v1.8904", "v1.8903", "v1.8902"],
     ext_updatenotes = [
+        ["Removed usage tracking", "The standard version no longer contacts any outside server"],
         ["Now comes in two versions: with and without Telegram alerts", "Fixed the Telegram ID warning appearing when the box was left blank"],
         ["Updated how Telegram alerts are sent"],
         ["Minor bug fixes","Fixed auto-enable on first install"],

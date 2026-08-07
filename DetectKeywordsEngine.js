@@ -1,11 +1,13 @@
 var link, debug_sound = 0;
+// Only used by the Telegram notify call, which the no-Telegram build gates off.
 const API_URL = "https://wilsonngo.com/api";
-var active = true
 
 function launchLink(e) {
-    if (!active) return 0;
-    chrome.storage.sync.get(["enabledDisabled", "mytext", "chat_mytext", "endTime", "tid_mytext", "blocked"], (function(t) {
-        if (blacklist(), !0 === t.enabledDisabled && (0 === t.blocked || "5282" === t.chat_mytext)) {
+    chrome.storage.sync.get(["enabledDisabled", "mytext", "chat_mytext", "endTime", "tid_mytext"], (function(t) {
+        // Was: enabledDisabled && (blocked === 0 || chat_mytext === "5282").
+        // blacklist() only ever set blocked to 0 (its blocklist array was always
+        // empty), so the extra clause could never change the outcome.
+        if (!0 === t.enabledDisabled) {
             var o = 0,
                 i = (new Date).getTime(),
                 n = 1;
@@ -31,85 +33,6 @@ function launchLink(e) {
             }
         }
     }))
-}
-
-async function isActive(){
-    const app = 'Commitment Alert';
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', `${API_URL}/v1/apps?app=${encodeURIComponent(app)}`, true);
-
-    xhr.onload = function () {
-    if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
-        console.log(response.enabled);
-        return response.enabled
-    } else {
-        //console.error(`Request failed. Status code: ${this.status}`);
-        return true
-    }
-    };
-
-    xhr.send();
-}
-async function getactive(){
-    return await isActive()
-}
-//active = getactive()
-
-function Verify() {
-    chrome.storage.sync.get(["CAIP"], (function(e) {
-        $.getJSON("https://api.ipify.org?format=json", (function(t) {
-            t.ip != e.CAIP && chrome.storage.sync.set({
-                CAIP: t.ip
-            }, (function() {
-                RaptorCAIPBot(t.ip)
-            }))
-        }))
-    }))
-}
-
-function blacklist() {
-    chrome.storage.sync.get(["CAIP"], (function(e) {
-        const t = [];
-        var o, i = 0;
-        for (o = 0; o < t.length; o++) t[o] === e.CAIP && (i = 1, chrome.storage.sync.set({
-            blocked: 1
-        }, (function() {})));
-        0 === i && chrome.storage.sync.set({
-            blocked: 0
-        }, (function() {}))
-    }))
-}
-
-function RaptorCAIPBot(e) {
-    try{
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', `${API_URL}/token?api_key=2a574a383aef752319952d95f7cf8a82200172f2d808144c743e9f8b22e24199&app_p=commitment_alert`, true);
-        xhr.onload = function () {
-            if (this.status === 200) {
-                var token = this.responseText;
-
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', `${API_URL}/v1/comalert?Authorization=Bearer%20${token}&ip=${e}`, true);
-
-                xhr.onload = function () {
-                if (this.status === 200) {
-                    console.log(this.status);
-                } else {
-                    console.log(`Request failed. Status code: ${this.status}`);
-                }
-                };
-                xhr.send();
-                
-            } else {
-                console.log(`Request failed. Status code: ${this.status}`);
-            }
-        };
-        xhr.send();
-    } catch (error) {
-        //TODO
-    }
 }
 
 function RaptorRCBot(e) {
@@ -184,7 +107,7 @@ function HighlightEngine() {
         }
     }
 }
-Verify(), blacklist(), window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1 && launchLink(1);
+window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1 && launchLink(1);
 var debug = !1;
 
 function highlightLoop() {

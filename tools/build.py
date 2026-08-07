@@ -4,7 +4,7 @@
 Produces two loadable extension folders (and matching zips) from this one
 source tree:
 
-    dist/commitment-alert/            no Telegram, no external calls
+    dist/commitment-alert/            no Telegram, no wilsonngo.com anywhere
     dist/commitment-alert-telegram/   Telegram notifications enabled
 
 Deliberately a build flag rather than two branches. The `clean` branch is
@@ -58,6 +58,34 @@ INCLUDE_DIRS = [
 FEATURE_HOSTS = {
     "telegram": ["wilsonngo.com"],
 }
+
+# Source text rewritten when a feature is off, so the disabled build contains no
+# reference to that feature's host at all. The PH team asked for a build with no
+# wilsonngo.com in it; verify() enforces that as a hard check rather than trust.
+FEATURE_REWRITES = {
+    "telegram": [
+        ("DetectKeywordsEngine.js",
+         'const API_URL = "https://wilsonngo.com/api";',
+         'const API_URL = "";'),
+        ("popup.html",
+         "https://wilsonngo.com/kb/commitment_alerts/telegram_alert.html",
+         "#"),
+    ],
+}
+
+# A build with a feature off must contain none of these strings anywhere.
+FEATURE_FORBIDDEN = {
+    "telegram": ["wilsonngo.com"],
+}
+
+# Occurrences that are NOT functional dependencies and are exempt from the
+# forbidden check. Currently just the author attribution link in the popup
+# footer -- it is a byline, not a call, and removing it is Wilson's call to make.
+# If the PH team's request covers visible links too, delete this entry and add a
+# rewrite to FEATURE_REWRITES instead.
+FORBIDDEN_EXEMPT = [
+    '<a href="http://www.wilsonngo.com" target="_blank"> Designed and developed by Wilson </a>',
+]
 
 VARIANTS = {
     "plain": {
@@ -141,10 +169,29 @@ def verify(out_dir, variant):
     if want not in features_js:
         problems.append("features.js does not contain %r" % want)
 
-    # The no-Telegram build must not reference the relay host anywhere.
+    # A disabled feature must leave no trace of its host anywhere in the build,
+    # and any call it still guards must be behind the FEATURES gate.
+    for feature, forbidden in FEATURE_FORBIDDEN.items():
+        if variant["features"].get(feature):
+            continue
+        for path in sorted(out_dir.rglob("*")):
+            if not path.is_file() or path.suffix not in (".js", ".html", ".json", ".css"):
+                continue
+            if "libs/" in path.relative_to(out_dir).as_posix():
+                continue
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            for exempt in FORBIDDEN_EXEMPT:
+                text = text.replace(exempt, "")
+            for needle in forbidden:
+                if needle in text:
+                    problems.append(
+                        "%s still references %r with %s disabled"
+                        % (path.relative_to(out_dir), needle, feature)
+                    )
+
     if not variant["features"]["telegram"]:
         for path in out_dir.rglob("*.js"):
-            if "libs/" in path.as_posix():
+            if "libs/" in path.relative_to(out_dir).as_posix():
                 continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             if "sendgram" in text and "FEATURES.telegram" not in text:
@@ -180,6 +227,18 @@ def build(name, variant, make_zip=True):
         shutil.copytree(src, out_dir / rel)
 
     (out_dir / "features.js").write_text(render_features(variant["features"]), encoding="utf-8")
+
+    for feature, rewrites in FEATURE_REWRITES.items():
+        if variant["features"].get(feature):
+            continue
+        for rel, old, new in rewrites:
+            target = out_dir / rel
+            text = target.read_text(encoding="utf-8")
+            if old not in text:
+                log("    FAIL  rewrite target not found in %s: %r" % (rel, old))
+                return False
+            target.write_text(text.replace(old, new), encoding="utf-8")
+            log("    strip %s (%s disabled)" % (rel, feature))
 
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     patched = patch_manifest(manifest, variant)

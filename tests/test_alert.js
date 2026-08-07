@@ -31,24 +31,30 @@ d = decide("chat", {});
 check("chat defaults to a window with the bundled chat sound",
     d.mode === "window" && d.url.endsWith("chat_melody.mp3"));
 
-// --- invisible is opt-in ----------------------------------------------------
+// --- invisible is opt-in, and only when there is no link --------------------
 d = decide("commitment", { windowMode: false });
 check("explicitly unticking the box plays invisibly",
     d.mode === "sound" && d.url.endsWith("melodyFinal.mp3"));
 
-// --- a link cannot be played invisibly --------------------------------------
+// A link wins over a stale or hand-edited windowMode:false. The popup ticks
+// and disables the box to match, but storage must not be able to contradict
+// this -- a link has no invisible form, so there is nothing to fall back to.
 d = decide("commitment", { windowMode: false, mytext: "https://youtu.be/abc" });
-check("invisible mode with a link falls back to the bundled sound, not the link",
-    d.mode === "sound" && d.url.endsWith("melodyFinal.mp3"));
-
-// --- the two alert kinds are independent ------------------------------------
-d = decide("chat", { windowMode: false, chat_mytext: "https://youtu.be/chat" });
-check("commitment invisible mode does not leak into chat",
-    d.mode === "window" && d.url === "https://youtu.be/chat");
+check("a link overrides invisible mode and opens the link",
+    d.mode === "window" && d.url === "https://youtu.be/abc");
 
 d = decide("chat", { chat_windowMode: false, chat_mytext: "https://youtu.be/chat" });
-check("chat uses its own mode flag and its own link",
-    d.mode === "sound");
+check("the same rule applies to chat",
+    d.mode === "window" && d.url === "https://youtu.be/chat");
+
+// --- the two alert kinds stay independent -----------------------------------
+d = decide("chat", { windowMode: false });
+check("commitment invisible mode does not leak into chat",
+    d.mode === "window" && d.url.endsWith("chat_melody.mp3"));
+
+d = decide("commitment", { chat_windowMode: false });
+check("chat invisible mode does not leak into commitment",
+    d.mode === "window" && d.url.endsWith("melodyFinal.mp3"));
 
 // --- legacy sentinel --------------------------------------------------------
 d = decide("chat", { chat_mytext: "5282" });

@@ -25,6 +25,7 @@ Stdlib only, so it runs the same on the Mac and on the Windows box.
 
 import argparse
 import json
+import re
 import shutil
 import sys
 import zipfile
@@ -191,6 +192,25 @@ def verify(out_dir, variant):
         for required in ("offscreen.html", "offscreen.js"):
             if not (out_dir / required).exists():
                 problems.append("offscreen permission granted but %s is missing" % required)
+
+    # Minimal CSS sanity check. Not a linter -- it catches one specific class of
+    # mistake that is invisible everywhere else in this pipeline: a missing
+    # semicolon, which makes the browser silently drop BOTH declarations.
+    # This repo carried `margin-bottom: 10px padding-left: 5px;` from long
+    # before the 2026-08 work and it was only spotted when a screenshot showed
+    # the inputs misaligned -- node --check, the unit tests and the manifest
+    # checks all pass happily while the popup renders wrong.
+    for css_path in sorted(out_dir.rglob("*.css")):
+        text = re.sub(r"/\*.*?\*/", "", css_path.read_text(encoding="utf-8"), flags=re.S)
+        for block in re.findall(r"\{([^{}]*)\}", text):
+            for declaration in block.split(";"):
+                # Two "property:" pairs inside one declaration means the
+                # separator between them is missing.
+                if len(re.findall(r"[A-Za-z-]+\s*:", declaration)) > 1:
+                    problems.append(
+                        "%s: missing semicolon in %r"
+                        % (css_path.relative_to(out_dir), declaration.strip()[:60])
+                    )
 
     features_js = (out_dir / "features.js").read_text(encoding="utf-8")
     for name, enabled in variant["features"].items():

@@ -100,20 +100,28 @@ function render() {
 
             if (!setting.modeKey) return;
 
-            // Window mode is the default -- undefined means on. Only an
-            // explicit false turns it off.
-            var windowMode = stored[setting.modeKey] !== false;
             var box = document.querySelector('[data-mode="' + setting.modeKey + '"]');
-            if (box) box.checked = windowMode;
-
-            // A link is a web page, and a web page cannot be played invisibly.
-            // Say so rather than silently ignoring what the user configured.
             var note = el("note_" + setting.key);
-            if (note) {
-                note.textContent = (!windowMode && isSet)
-                    ? "Playing the default sound instead — a link needs a window."
-                    : "";
+
+            if (isSet) {
+                // A link can only be shown in a window, so this is not a choice
+                // to offer. Tick it, lock it, and say why -- mirrors the same
+                // rule in decideAlert(), which is the authority.
+                if (box) {
+                    box.checked = true;
+                    box.disabled = true;
+                }
+                if (note) note.textContent = "A link always opens in a window. Remove it to play a sound instead.";
+                return;
             }
+
+            // No link: window is the default, and only an explicit false --
+            // someone deliberately unticking -- gives invisible playback.
+            if (box) {
+                box.checked = stored[setting.modeKey] !== false;
+                box.disabled = false;
+            }
+            if (note) note.textContent = "";
         });
     });
 }

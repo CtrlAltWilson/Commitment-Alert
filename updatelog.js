@@ -15,6 +15,10 @@
 // manifest.json -- otherwise the popup shows notes for a release nobody has.
 
 var RELEASES = [
+    { version: "2.1500", notes: [
+        "Setting a link now ticks and locks 'Open in a window' for you",
+        "Fixed the Reset button label spilling outside the button"
+    ]},
     { version: "2.1400", notes: [
         "Your alert link is used again straight away - no checkbox needed",
         "Settings redesigned: edit with the pencil, reset with the red x",

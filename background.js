@@ -69,28 +69,28 @@ const DEFAULT_CONFIG = {
 // Given the stored settings, decide how this alert should be delivered.
 // Returns { mode: "sound" | "window", url, windowName }.
 //
-// A link can only be shown in a window -- a YouTube page is not audio and
-// cannot be played invisibly. So "window mode off" always means the bundled
-// sound, even if a link is configured. The popup says so rather than quietly
-// ignoring the user's link.
+// Order matters:
+//
+//  1. A configured link ALWAYS opens a window. A link is a web page, not
+//     audio, so there is no invisible way to play it -- the choice does not
+//     exist, and pretending otherwise is what made v2.1300 silently play the
+//     default melody over someone's YouTube link. The popup ticks and disables
+//     the checkbox to match, but this function is the authority: a stale or
+//     hand-edited storage value cannot contradict it.
+//  2. Otherwise a window is the default (v2.1400). Only an explicit false --
+//     someone deliberately unticking the box -- gives invisible playback.
 function decideAlert(kind, stored, resolveUrl) {
     const alert = ALERTS[kind];
     if (!alert) return null;
 
     const link = stored[alert.linkKey];
     const hasLink = link !== undefined && link !== "" && link !== USE_DEFAULT_SOUND;
-    // Window mode is the DEFAULT (changed in v2.1400 after testing). Only an
-    // explicit false turns it off, so a freshly installed extension -- and
-    // anyone who sets a link without touching the checkbox -- behaves the way
-    // the extension always has.
-    const wantsWindow = stored[alert.modeKey] !== false;
 
-    if (wantsWindow) {
-        return {
-            mode: "window",
-            url: hasLink ? link : resolveUrl(alert.sound),
-            windowName: alert.windowName
-        };
+    if (hasLink) {
+        return { mode: "window", url: link, windowName: alert.windowName };
+    }
+    if (stored[alert.modeKey] !== false) {
+        return { mode: "window", url: resolveUrl(alert.sound), windowName: alert.windowName };
     }
     return { mode: "sound", url: resolveUrl(alert.sound), windowName: alert.windowName };
 }

@@ -358,3 +358,20 @@ button[type="x"]:hover {
     text-align: center;
     margin: 6px 0;
 }
+
+/* A locked checkbox (a link is set, so a window is not optional) should read
+   as locked rather than as an unresponsive control. :has() is safe here --
+   MV3 requires Chrome 109+ and :has() landed in 105. */
+.modeLabel:has(input:disabled) {
+    color: #8a8a8a;
+    cursor: default;
+}
+
+/* The shared button rule is width: 28%, which "Reset everything" overflowed --
+   the label spilled out below the box. Size this one to its text. */
+#Buttons button[type="default"] {
+    width: auto;
+    height: auto;
+    padding: 4px 14px;
+    margin-top: 4px;
+}

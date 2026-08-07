@@ -10,5 +10,8 @@
 // (manifest.json content_scripts), so FEATURES is available to both.
 
 var FEATURES = {
-    telegram: true
+    telegram: true,
+    // CALERT-20 spike. Off in both shipped builds; on in the `spike` variant,
+    // which is the only one that requests the "webNavigation" permission.
+    navSpike: false
 };

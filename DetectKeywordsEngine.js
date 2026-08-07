@@ -55,10 +55,28 @@ function alertTarget(alert, stored) {
     return configured;
 }
 
+// Tell the service worker a detection happened. Observation only -- the alert
+// does not depend on this, and a failure here must never stop one firing.
+function reportDetection(kind) {
+    try {
+        chrome.runtime.sendMessage({ type: "DETECTED", kind: kind }, function() {
+            // Reading lastError suppresses the "unchecked runtime.lastError"
+            // console noise when the worker is not listening.
+            void chrome.runtime.lastError;
+        });
+    } catch (e) {
+        // Extension context invalidated (reload/update). Nothing to do.
+    }
+}
+
 // kind: "commitment" | "chat"
 function launchLink(kind) {
     const alert = ALERTS[kind];
     if (!alert) return;
+
+    // Before the debounce, so the spike counts real detections rather than
+    // the subset that survived the once-per-minute cooldown.
+    reportDetection(kind);
 
     chrome.storage.sync.get(
         ["enabledDisabled", "endTime", "tid_mytext", alert.linkKey],

@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """Build the Commitment Alert extension variants.
 
-Produces two loadable extension folders (and matching zips) from this one
-source tree:
+Produces loadable extension folders (and matching zips) from this one source
+tree:
 
     dist/commitment-alert/            no Telegram, no wilsonngo.com anywhere
     dist/commitment-alert-telegram/   Telegram notifications enabled
+    dist/commitment-alert-spike/      Telegram + the CALERT-20 webNavigation
+                                      spike. NOT for general distribution --
+                                      it is the only build that requests the
+                                      "webNavigation" permission.
 
-Deliberately a build flag rather than two branches. The `clean` branch is
-already a hand-made no-Telegram build and it drifted from `main` until neither
-was usable -- see docs Code-Analysis finding R1 in the vault.
+Deliberately build flags rather than branches. The `clean` branch is already a
+hand-made no-Telegram build and it drifted from `main` until neither was usable
+-- see docs Code-Analysis finding R1 in the vault.
 
 Usage:
-    python3 tools/build.py              # both variants
+    python3 tools/build.py              # all variants
     python3 tools/build.py --variant telegram
     python3 tools/build.py --no-zip
 
@@ -75,16 +79,32 @@ FEATURE_FORBIDDEN = {
     "telegram": ["wilsonngo.com"],
 }
 
+# Extra manifest "permissions" entries added only when a feature is on, so a
+# build never requests capability it cannot use. This matters more than it
+# looks: adding a permission to a sideloaded extension can make Chrome disable
+# it pending re-approval, and this team cannot afford silent downtime -- hence
+# the spike lives in its own variant rather than in what everyone runs.
+FEATURE_PERMISSIONS = {
+    "navSpike": ["webNavigation"],
+}
+
 VARIANTS = {
     "plain": {
         "dir": "commitment-alert",
         "suffix": "",
-        "features": {"telegram": False},
+        "features": {"telegram": False, "navSpike": False},
     },
     "telegram": {
         "dir": "commitment-alert-telegram",
         "suffix": " (Telegram)",
-        "features": {"telegram": True},
+        "features": {"telegram": True, "navSpike": False},
+    },
+    # CALERT-20. Not for general distribution -- run it yourself, or hand it to
+    # a couple of volunteers, to collect data for a day.
+    "spike": {
+        "dir": "commitment-alert-spike",
+        "suffix": " (webNavigation spike)",
+        "features": {"telegram": True, "navSpike": True},
     },
 }
 
@@ -127,6 +147,15 @@ def patch_manifest(manifest, variant):
         if removed:
             log("    stripped %d host_permission(s) for disabled features" % removed)
 
+    for feature, extra in FEATURE_PERMISSIONS.items():
+        if not variant["features"].get(feature):
+            continue
+        permissions = manifest.setdefault("permissions", [])
+        for perm in extra:
+            if perm not in permissions:
+                permissions.append(perm)
+                log("    added permission %r for %s" % (perm, feature))
+
     return manifest
 
 
@@ -153,9 +182,21 @@ def verify(out_dir, variant):
             problems.append("manifest references missing file: %s" % ref)
 
     features_js = (out_dir / "features.js").read_text(encoding="utf-8")
-    want = "telegram: %s" % ("true" if variant["features"]["telegram"] else "false")
-    if want not in features_js:
-        problems.append("features.js does not contain %r" % want)
+    for name, enabled in variant["features"].items():
+        want = "%s: %s" % (name, "true" if enabled else "false")
+        if want not in features_js:
+            problems.append("features.js does not contain %r" % want)
+
+    # A permission tied to a disabled feature must not be requested, and one
+    # tied to an enabled feature must be.
+    granted = manifest.get("permissions", [])
+    for feature, extra in FEATURE_PERMISSIONS.items():
+        for perm in extra:
+            enabled = bool(variant["features"].get(feature))
+            if enabled and perm not in granted:
+                problems.append("permission %r missing but %s is on" % (perm, feature))
+            if not enabled and perm in granted:
+                problems.append("permission %r requested but %s is off" % (perm, feature))
 
     # A disabled feature must leave no trace of its host anywhere in the build,
     # and any call it still guards must be behind the FEATURES gate.
@@ -269,7 +310,7 @@ def main():
         return 1
 
     log("\nLoad unpacked from dist/<variant>/ to test.")
-    log("Reminder: the two variants need DIFFERENT signing keys, kept OUTSIDE this repo.")
+    log("Reminder: each distributed variant needs its OWN signing key, kept OUTSIDE this repo.")
     return 0
 
 

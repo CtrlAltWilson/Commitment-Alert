@@ -15,6 +15,10 @@
 // manifest.json -- otherwise the popup shows notes for a release nobody has.
 
 var RELEASES = [
+    { version: "2.1200", notes: [
+        "Groundwork for upcoming alert improvements",
+        "No change to how alerts work"
+    ]},
     { version: "2.1100", notes: [
         "Cleaned up the settings screen",
         "The reset (x) buttons are more reliable",

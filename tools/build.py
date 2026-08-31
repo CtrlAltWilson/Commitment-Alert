@@ -4,20 +4,20 @@
 Produces loadable extension folders (and matching zips) from this one source
 tree:
 
-    dist/commitment-alert/            no Telegram, no wilsonngo.com anywhere
-    dist/commitment-alert-telegram/   Telegram notifications enabled
-    dist/commitment-alert-spike/      Telegram + the CALERT-20 webNavigation
-                                      spike. NOT for general distribution --
-                                      it is the only build that requests the
-                                      "webNavigation" permission.
+    dist/commitment-alert/        the extension
+    dist/commitment-alert-spike/  + the CALERT-20 webNavigation spike. NOT for
+                                  general distribution -- it is the only build
+                                  that requests the "webNavigation" permission.
 
-Deliberately build flags rather than branches. The `clean` branch is already a
-hand-made no-Telegram build and it drifted from `main` until neither was usable
--- see docs Code-Analysis finding R1 in the vault.
+Telegram was removed entirely in v2.1600, which collapsed the with/without
+split back to a single shipped build. The flag machinery stays because it is
+what keeps the spike out of what the team runs -- and because expressing a
+variant as a build flag rather than a branch is the lesson of finding R1, where
+the hand-made `clean` branch drifted from `main` until neither was usable.
 
 Usage:
     python3 tools/build.py              # all variants
-    python3 tools/build.py --variant telegram
+    python3 tools/build.py --variant spike
     python3 tools/build.py --no-zip
 
 Stdlib only, so it runs the same on the Mac and on the Windows box.
@@ -60,28 +60,6 @@ INCLUDE_DIRS = [
     "libs",
 ]
 
-# Hosts stripped from host_permissions when a feature is off, so a build cannot
-# request access it will never use.
-FEATURE_HOSTS = {
-    "telegram": ["wilsonngo.com"],
-}
-
-# Source text rewritten when a feature is off, so the disabled build contains no
-# reference to that feature's host at all. The PH team asked for a build with no
-# wilsonngo.com in it; verify() enforces that as a hard check rather than trust.
-FEATURE_REWRITES = {
-    "telegram": [
-        ("background.js",
-         'const API_URL = "https://wilsonngo.com/api";',
-         'const API_URL = "";'),
-    ],
-}
-
-# A build with a feature off must contain none of these strings anywhere.
-FEATURE_FORBIDDEN = {
-    "telegram": ["wilsonngo.com"],
-}
-
 # Extra manifest "permissions" entries added only when a feature is on, so a
 # build never requests capability it cannot use. This matters more than it
 # looks: adding a permission to a sideloaded extension can make Chrome disable
@@ -92,22 +70,17 @@ FEATURE_PERMISSIONS = {
 }
 
 VARIANTS = {
-    "plain": {
+    "default": {
         "dir": "commitment-alert",
         "suffix": "",
-        "features": {"telegram": False, "navSpike": False},
-    },
-    "telegram": {
-        "dir": "commitment-alert-telegram",
-        "suffix": " (Telegram)",
-        "features": {"telegram": True, "navSpike": False},
+        "features": {"navSpike": False},
     },
     # CALERT-20. Not for general distribution -- run it yourself, or hand it to
     # a couple of volunteers, to collect data for a day.
     "spike": {
         "dir": "commitment-alert-spike",
         "suffix": " (webNavigation spike)",
-        "features": {"telegram": True, "navSpike": True},
+        "features": {"navSpike": True},
     },
 }
 
@@ -134,21 +107,6 @@ def render_features(features):
 def patch_manifest(manifest, variant):
     manifest = json.loads(json.dumps(manifest))  # deep copy
     manifest["name"] = manifest["name"] + variant["suffix"]
-
-    disabled_hosts = []
-    for feature, hosts in FEATURE_HOSTS.items():
-        if not variant["features"].get(feature):
-            disabled_hosts.extend(hosts)
-
-    if disabled_hosts and "host_permissions" in manifest:
-        kept = [
-            h for h in manifest["host_permissions"]
-            if not any(bad in h for bad in disabled_hosts)
-        ]
-        removed = len(manifest["host_permissions"]) - len(kept)
-        manifest["host_permissions"] = kept
-        if removed:
-            log("    stripped %d host_permission(s) for disabled features" % removed)
 
     for feature, extra in FEATURE_PERMISSIONS.items():
         if not variant["features"].get(feature):
@@ -229,32 +187,6 @@ def verify(out_dir, variant):
             if not enabled and perm in granted:
                 problems.append("permission %r requested but %s is off" % (perm, feature))
 
-    # A disabled feature must leave no trace of its host anywhere in the build,
-    # and any call it still guards must be behind the FEATURES gate.
-    for feature, forbidden in FEATURE_FORBIDDEN.items():
-        if variant["features"].get(feature):
-            continue
-        for path in sorted(out_dir.rglob("*")):
-            if not path.is_file() or path.suffix not in (".js", ".html", ".json", ".css"):
-                continue
-            if "libs/" in path.relative_to(out_dir).as_posix():
-                continue
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            for needle in forbidden:
-                if needle in text:
-                    problems.append(
-                        "%s still references %r with %s disabled"
-                        % (path.relative_to(out_dir), needle, feature)
-                    )
-
-    if not variant["features"]["telegram"]:
-        for path in out_dir.rglob("*.js"):
-            if "libs/" in path.relative_to(out_dir).as_posix():
-                continue
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            if "sendgram" in text and "FEATURES.telegram" not in text:
-                problems.append("%s calls sendgram with no feature gate" % path.name)
-
     if problems:
         for p in problems:
             log("    FAIL  %s" % p)
@@ -285,18 +217,6 @@ def build(name, variant, make_zip=True):
         shutil.copytree(src, out_dir / rel)
 
     (out_dir / "features.js").write_text(render_features(variant["features"]), encoding="utf-8")
-
-    for feature, rewrites in FEATURE_REWRITES.items():
-        if variant["features"].get(feature):
-            continue
-        for rel, old, new in rewrites:
-            target = out_dir / rel
-            text = target.read_text(encoding="utf-8")
-            if old not in text:
-                log("    FAIL  rewrite target not found in %s: %r" % (rel, old))
-                return False
-            target.write_text(text.replace(old, new), encoding="utf-8")
-            log("    strip %s (%s disabled)" % (rel, feature))
 
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     patched = patch_manifest(manifest, variant)

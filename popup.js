@@ -14,42 +14,13 @@ var SETTINGS = [{
     modeKey: "windowMode",
     // Shown when nothing is set; the alert falls back to this bundled sound.
     fallbackLabel: "Default Sound",
-    fallbackSound: "melodyFinal.mp3",
-    isLink: true,
-    feature: null,
-    validate: null
+    fallbackSound: "melodyFinal.mp3"
 }, {
     key: "chat_mytext",
     modeKey: "chat_windowMode",
     fallbackLabel: "Default Sound",
-    fallbackSound: "chat_melody.mp3",
-    isLink: true,
-    feature: null,
-    validate: null
-}, {
-    key: "tid_mytext",
-    modeKey: null,
-    fallbackLabel: "Not set",
-    fallbackSound: null,
-    isLink: false,
-    feature: "telegram",
-    validate: {
-        test: function(v) { return /^[0-9]+$/.test(v); },
-        message: "Telegram ID can only be numbers"
-    }
+    fallbackSound: "chat_melody.mp3"
 }];
-
-function featureEnabled(name) {
-    if (!name) return true;
-    return typeof FEATURES !== "undefined" && !!FEATURES[name];
-}
-
-// Build-variant gate: the no-Telegram build hides that card entirely.
-if (!featureEnabled("telegram")) {
-    var hide = document.createElement("style");
-    hide.textContent = "#card_tid_mytext { display: none !important; }";
-    document.head.appendChild(hide);
-}
 
 function el(id) { return document.getElementById(id); }
 
@@ -88,9 +59,7 @@ function render() {
             var isSet = value !== undefined && value !== "";
 
             var display = el("val_" + setting.key);
-            display.textContent = isSet
-                ? (setting.isLink ? domainFromUrl(value) : value)
-                : setting.fallbackLabel;
+            display.textContent = isSet ? domainFromUrl(value) : setting.fallbackLabel;
             display.title = isSet ? value : setting.fallbackLabel;
             display.className = isSet ? "cardValue" : "cardValue muted";
 
@@ -142,11 +111,6 @@ function closeEditor(setting) {
 
 function commitEditor(setting) {
     var value = el("in_" + setting.key).value.trim();
-
-    if (value !== "" && setting.validate && !setting.validate.test(value)) {
-        flash(setting.validate.message, 2500);
-        return;
-    }
     save(setting.key, value);
     closeEditor(setting);
     render();

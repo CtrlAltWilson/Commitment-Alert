@@ -18,7 +18,7 @@ function install(options) {
     options = options || {};
 
     global.importScripts = noop;
-    global.FEATURES = Object.assign({ telegram: true, navSpike: false }, options.features);
+    global.FEATURES = Object.assign({ navSpike: false }, options.features);
 
     global.chrome = {
         storage: {

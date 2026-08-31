@@ -22,8 +22,6 @@
 
 importScripts("features.js");
 
-const API_URL = "https://wilsonngo.com/api";
-
 // One alert per minute, however many tabs and frames saw it.
 const ALERT_COOLDOWN_MS = 60000;
 
@@ -41,15 +39,13 @@ const ALERTS = {
         linkKey: "mytext",
         modeKey: "windowMode",
         sound: "melodyFinal.mp3",
-        windowName: "Commitment",
-        message: "You have a commitment!"
+        windowName: "Commitment"
     },
     chat: {
         linkKey: "chat_mytext",
         modeKey: "chat_windowMode",
         sound: "chat_melody.mp3",
-        windowName: "Chat",
-        message: "You have a chat!"
+        windowName: "Chat"
     }
 };
 
@@ -102,7 +98,7 @@ async function maybeAlert(kind, sender) {
     if (!alert) return;
 
     const sync = await chrome.storage.sync.get([
-        "enabledDisabled", "tid_mytext", alert.linkKey, alert.modeKey
+        "enabledDisabled", alert.linkKey, alert.modeKey
     ]);
     if (sync.enabledDisabled !== true) return;
 
@@ -149,8 +145,6 @@ async function maybeAlert(kind, sender) {
     // how a single click on the toolbar icon stops the alert.
     chrome.action.setPopup({ popup: "" });
     chrome.alarms.create("alert-timeout", { delayInMinutes: ALERT_TIMEOUT_MINUTES });
-
-    if (sync.tid_mytext) notifyTelegram(alert, sync.tid_mytext);
 }
 
 async function stopAlert() {
@@ -198,15 +192,6 @@ async function ensureOffscreen() {
     } catch (e) {
         if (!String(e).includes("Only a single offscreen")) throw e;
     }
-}
-
-function notifyTelegram(alert, chatId) {
-    if (!FEATURES.telegram) return;
-    fetch(`${API_URL}/v1/sendgram`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatid: chatId, app: "commitment_alert", message: alert.message })
-    }).catch(e => console.log("[commitment-alert] sendgram failed", e));
 }
 
 // --- listeners (all registered synchronously) -------------------------------
@@ -292,6 +277,10 @@ chrome.runtime.onInstalled.addListener(() => {
             chrome.storage.sync.set({ modeDefaultReset: true });
         });
     });
+    // Telegram was removed in v2.1600. Drop the orphaned chat id rather than
+    // leaving a stale personal identifier sitting in everyone's synced storage.
+    chrome.storage.sync.remove("tid_mytext");
+
     // Clear any badge left over from an interrupted alert.
     chrome.action.setBadgeText({ text: "" });
     chrome.action.setPopup({ popup: "popup.html" });

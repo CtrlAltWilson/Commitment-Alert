@@ -13,8 +13,19 @@
 //
 // Add new releases to the TOP, and keep the top entry equal to the version in
 // manifest.json -- otherwise the popup shows notes for a release nobody has.
+//
+// Entries that described only Telegram were dropped in v2.1600 along with the
+// feature, and a couple of notes that told users to do something no longer
+// possible were reworded. These notes are user-facing help, not an audit trail
+// -- git history is the audit trail. A changelog that advertises a feature the
+// extension does not have is worse than a shorter one.
 
 var RELEASES = [
+    { version: "2.1600", notes: [
+        "Telegram alerts have been removed",
+        "The extension no longer contacts any outside server",
+        "Your saved Telegram ID has been deleted"
+    ]},
     { version: "2.1500", notes: [
         "Setting a link now ticks and locks 'Open in a window' for you",
         "Fixed the Reset button label spilling outside the button"
@@ -26,13 +37,12 @@ var RELEASES = [
         "Fixed the cut-off version number and the spacing"
     ]},
     { version: "2.1300", notes: [
-        "Alerts now play in the background with no pop-up window",
+        "Alerts can now play in the background with no pop-up window",
         "Click the extension icon to stop an alert",
-        "Alerts stop on their own when the commitment closes",
-        "Tick 'Open a window' in settings if you use a YouTube link"
+        "Alerts stop on their own when the commitment closes"
     ]},
     { version: "2.1200", notes: [
-        "Groundwork for upcoming alert improvements",
+        "Groundwork for the alert improvements above",
         "No change to how alerts work"
     ]},
     { version: "2.1100", notes: [
@@ -41,15 +51,7 @@ var RELEASES = [
         "Removed the external website links"
     ]},
     { version: "2.1000", notes: [
-        "Removed usage tracking",
-        "The standard version no longer contacts any outside server"
-    ]},
-    { version: "2.0900", notes: [
-        "Now comes in two versions: with and without Telegram alerts",
-        "Fixed the Telegram ID warning appearing when the box was left blank"
-    ]},
-    { version: "2.0800", notes: [
-        "Updated how Telegram alerts are sent"
+        "Removed usage tracking"
     ]},
     { version: "2.0700", notes: [
         "Minor bug fixes",
@@ -58,12 +60,7 @@ var RELEASES = [
     { version: "2.0600", notes: [
         "Updated to manifest v3",
         "Fixed url detection issue",
-        "Revamped update logs",
-        "Optimized code"
-    ]},
-    { version: "2.0300", notes: [
-        "Alerts can now be sent to Telegram!",
-        "Removed scrollbar so it doesn't adjust the size of the window"
+        "Revamped update logs"
     ]},
     { version: "2.0200", notes: [
         "Logo now links to commitment in case the commitment box disappears",

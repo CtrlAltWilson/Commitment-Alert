@@ -1,9 +1,12 @@
 body,
 html {
     background-color: white;
-    overflow: scroll;
+    /* Was overflow: scroll, which clipped the last line (the version) because
+       the popup sized to a scroll viewport instead of to its content. */
+    overflow: visible;
     width: 246px;
     margin: 0px;
+    padding-bottom: 6px;
 }
 
 ::-webkit-scrollbar {
@@ -56,7 +59,9 @@ input[type="text"] {
     margin-top: 5px;
     width: 70%;
     height: 20px;
-    margin-bottom: 10px padding-left: 5px;
+    margin-bottom: 10px;
+    padding-left: 5px;
+    box-sizing: border-box;
 }
 
 #Buttons {
@@ -230,4 +235,143 @@ button[type="x"] {
 button[type="x"]:hover {
     background-color: red;
     border: 2px solid red;
+}
+
+/* --- setting cards (2026-08-08) ----------------------------------------- */
+
+.card {
+    background-color: #e4fdff;
+    border-radius: 8px;
+    margin: 0 8px 8px 8px;
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 11px;
+}
+
+.cardTitle {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.cardRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cardValue {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #444;
+}
+
+.cardValue.muted {
+    color: #8a8a8a;
+    font-style: italic;
+}
+
+.iconBtn {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 4px;
+    color: #4a4a4a;
+    border-radius: 3px;
+}
+
+.iconBtn:hover {
+    background-color: #ffffff;
+}
+
+.iconBtn.danger {
+    color: #c62828;
+}
+
+.cardEdit {
+    display: none;
+    margin-top: 6px;
+}
+
+.cardEdit.open {
+    display: block;
+}
+
+.cardEdit input[type="text"] {
+    width: 100%;
+    margin-top: 0;
+    margin-bottom: 6px;
+}
+
+.miniBtn {
+    background-color: #36eeff;
+    border: 1px solid #02cbdd;
+    border-radius: 3px;
+    font-size: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    color: black;
+}
+
+.miniBtn.ghost {
+    background-color: #ffffff;
+    border-color: #cccccc;
+}
+
+.modeLabel {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    cursor: pointer;
+    color: #333;
+}
+
+.modeLabel input[type="checkbox"] {
+    margin: 0;
+}
+
+.cardNote {
+    color: #a15c00;
+    margin-top: 4px;
+    line-height: 1.3;
+}
+
+.cardNote:empty {
+    margin-top: 0;
+}
+
+#Saved {
+    text-align: center;
+    font-size: 11px;
+    color: #00808a;
+    min-height: 14px;
+    margin: 4px 0;
+}
+
+#versionCheck {
+    text-align: center;
+    margin: 6px 0;
+}
+
+/* A locked checkbox (a link is set, so a window is not optional) should read
+   as locked rather than as an unresponsive control. :has() is safe here --
+   MV3 requires Chrome 109+ and :has() landed in 105. */
+.modeLabel:has(input:disabled) {
+    color: #8a8a8a;
+    cursor: default;
+}
+
+/* The shared button rule is width: 28%, which "Reset everything" overflowed --
+   the label spilled out below the box. Size this one to its text. */
+#Buttons button[type="default"] {
+    width: auto;
+    height: auto;
+    padding: 4px 14px;
+    margin-top: 4px;
 }

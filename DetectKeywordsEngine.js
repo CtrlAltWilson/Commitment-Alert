@@ -1,127 +1,32 @@
-var link, debug_sound = 0;
-const API_URL = "https://wilsonngo.com/api";
-var active = true
+// Commitment / chat detection.
+//
+// As of v2.1300 this file only DETECTS. The service worker owns the debounce,
+// the sound-vs-window decision, playback, the toolbar badge and every way an
+// alert stops. That move is what makes invisible audio possible -- only the
+// worker can create the offscreen document that plays it.
+//
+// launchLink() keeps its name on purpose: one of its two call sites is buried
+// mid-expression inside the highlight engine below, and renaming it there is
+// exactly the kind of edit that silently kills the chat alert.
 
-function launchLink(e) {
-    if (!active) return 0;
-    chrome.storage.sync.get(["enabledDisabled", "mytext", "chat_mytext", "endTime", "tid_mytext", "blocked"], (function(t) {
-        if (blacklist(), !0 === t.enabledDisabled && (0 === t.blocked || "5282" === t.chat_mytext)) {
-            var o = 0,
-                i = (new Date).getTime(),
-                n = 1;
-            if ((void 0 === t.endTime || "" === t.endTime || t.endTime < i || 1 === debug_sound) && (chrome.storage.sync.set({
-                    endTime: i + 6e4
-                }, (function() {})), o = 1), void 0 !== t.tid_mytext && "" !== t.tid_mytext || (n = 0), 1 === o) {
-                if (1 === e)
-                    if (void 0 === t.mytext || "" === t.mytext) {
-                        var r = chrome.runtime.getURL("melodyFinal.mp3");
-                        window.open(r, "Commitment", "resizable,scrollbars,status")
-                    } else {
-                        link = t.mytext;
-                        window.open(link, "Commitment", "resizable,scrollbars,status")
-                    }
-                else if (0 === e)
-                    if (void 0 === t.chat_mytext || "" === t.chat_mytext || "5282" === t.chat_mytext) {
-                        var s = chrome.runtime.getURL("chat_melody.mp3");
-                        window.open(s, "Chat", "resizable,scrollbars,status")
-                    } else {
-                        link = t.chat_mytext;
-                        window.open(link, "Chat", "resizable,scrollbars,status")
-                    } n && RaptorRCBot(e)
-            }
-        }
-    }))
-}
+const ALERT_KINDS = { commitment: true, chat: true };
 
-async function isActive(){
-    const app = 'Commitment Alert';
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', `${API_URL}/v1/apps?app=${encodeURIComponent(app)}`, true);
-
-    xhr.onload = function () {
-    if (this.status === 200) {
-        const response = JSON.parse(this.responseText);
-        console.log(response.enabled);
-        return response.enabled
-    } else {
-        //console.error(`Request failed. Status code: ${this.status}`);
-        return true
-    }
-    };
-
-    xhr.send();
-}
-async function getactive(){
-    return await isActive()
-}
-//active = getactive()
-
-function Verify() {
-    chrome.storage.sync.get(["CAIP"], (function(e) {
-        $.getJSON("https://api.ipify.org?format=json", (function(t) {
-            t.ip != e.CAIP && chrome.storage.sync.set({
-                CAIP: t.ip
-            }, (function() {
-                RaptorCAIPBot(t.ip)
-            }))
-        }))
-    }))
-}
-
-function blacklist() {
-    chrome.storage.sync.get(["CAIP"], (function(e) {
-        const t = [];
-        var o, i = 0;
-        for (o = 0; o < t.length; o++) t[o] === e.CAIP && (i = 1, chrome.storage.sync.set({
-            blocked: 1
-        }, (function() {})));
-        0 === i && chrome.storage.sync.set({
-            blocked: 0
-        }, (function() {}))
-    }))
-}
-
-function RaptorCAIPBot(e) {
-    try{
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', `${API_URL}/token?api_key=2a574a383aef752319952d95f7cf8a82200172f2d808144c743e9f8b22e24199&app_p=commitment_alert`, true);
-        xhr.onload = function () {
-            if (this.status === 200) {
-                var token = this.responseText;
-
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', `${API_URL}/v1/comalert?Authorization=Bearer%20${token}&ip=${e}`, true);
-
-                xhr.onload = function () {
-                if (this.status === 200) {
-                    console.log(this.status);
-                } else {
-                    console.log(`Request failed. Status code: ${this.status}`);
-                }
-                };
-                xhr.send();
-                
-            } else {
-                console.log(`Request failed. Status code: ${this.status}`);
-            }
-        };
-        xhr.send();
-    } catch (error) {
-        //TODO
+function sendToWorker(message) {
+    try {
+        chrome.runtime.sendMessage(message, function() {
+            // Reading lastError suppresses the "unchecked runtime.lastError"
+            // console noise when the worker is still starting.
+            void chrome.runtime.lastError;
+        });
+    } catch (e) {
+        // Extension context invalidated (reload/update). Nothing to do.
     }
 }
 
-function RaptorRCBot(e) {
-    chrome.storage.sync.get(["tid_mytext"], (function(t) {
-        var o = t.tid_mytext,
-            i = new XMLHttpRequest;
-        if (i.open("POST", `${API_URL}/v1/sendgram`), i.setRequestHeader("Content-Type", "application/json"), i.onreadystatechange = function() {
-                4 === i.readyState && (console.log(i.status), console.log(i.responseText))
-            }, 0 === e) t = {chatid: o, app: 'commitment_alert', message: 'You have a chat!'};
-        else t = {chatid: o, app: 'commitment_alert', message: 'You have a commitment!'};
-        i.send(JSON.stringify(t))
-    }))
+// kind: "commitment" | "chat"
+function launchLink(kind) {
+    if (!ALERT_KINDS[kind]) return;
+    sendToWorker({ type: "ALERT", kind: kind });
 }
 
 function HighlightEngine() {
@@ -149,7 +54,7 @@ function HighlightEngine() {
                             }
                             if (null != wordColor[l]) {
                                 var c = document.createElement("EM");
-                                if (c.className = e, c.appendChild(document.createTextNode(regs[0])), launchLink(0), c.style = r ? "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;-webkit-print-color-adjust:exact;" : "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;", wordColor[l].Color && (c.style.backgroundColor = wordColor[l].Color), wordColor[l].Fcolor && (c.style.color = wordColor[l].Fcolor), c.setAttribute("match", wordColor[l].word), c.setAttribute("loopNumber", g), c.style.fontStyle = "inherit", !s || s && wordColor[l].ShowInEditableFields) {
+                                if (c.className = e, c.appendChild(document.createTextNode(regs[0])), launchLink("chat"), c.style = r ? "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;-webkit-print-color-adjust:exact;" : "padding: 1px;box-shadow: 1px 1px #e5e5e5;border-radius: 3px;", wordColor[l].Color && (c.style.backgroundColor = wordColor[l].Color), wordColor[l].Fcolor && (c.style.color = wordColor[l].Fcolor), c.setAttribute("match", wordColor[l].word), c.setAttribute("loopNumber", g), c.style.fontStyle = "inherit", !s || s && wordColor[l].ShowInEditableFields) {
                                     var m = n.splitText(regs.index);
                                     m.nodeValue = m.nodeValue.substring(regs[0].length), n.parentNode.insertBefore(c, m)
                                 }
@@ -182,7 +87,20 @@ function HighlightEngine() {
         }
     }
 }
-Verify(), blacklist(), window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1 && launchLink(1);
+if (window.location.href.indexOf("/apex/inContactCommitmentReminder?mode=") > -1) {
+    launchLink("commitment");
+    // Tell the worker when this page goes away so the alert stops as soon as
+    // the agent accepts or dismisses the commitment. Scoped to the commitment
+    // page on purpose -- firing this from any Salesforce tab would cut an
+    // alert short whenever an unrelated tab was closed.
+    //
+    // Not sufficient on its own: a message sent from a closing page may never
+    // be delivered. The worker also watches tabs.onRemoved and holds a
+    // chrome.alarms backstop.
+    window.addEventListener("pagehide", function() {
+        sendToWorker({ type: "GONE" });
+    });
+}
 var debug = !1;
 
 function highlightLoop() {

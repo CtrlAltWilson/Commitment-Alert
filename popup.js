@@ -1,130 +1,209 @@
-var version = document.getElementById("versionCheck");
+// Popup settings UI.
+//
+// Rewritten 2026-08-08 around one card per setting: the current value, the
+// pencil that edits it and the red x that resets it all sit together. The
+// previous layout put three inputs in one block with a global Save underneath,
+// which read as though Save also applied the checkboxes -- it didn't, because
+// they save on change, so clicking Save reported "Nothing was typed!".
+//
+// Everything is driven by the SETTINGS table. To add a field, add a row here
+// and a card in popup.html.
 
-function CurrentLink() {
-    chrome.storage.sync.get(["mytext", "chat_mytext", "tid_mytext"], (function(e) {
-        eraseText();
-        var t = document.getElementById("linkM");
-        if (void 0 === e.mytext || "" === e.mytext) t.innerHTML = '<a href="' + chrome.runtime.getURL("melodyFinal.mp3") + '" target="_blank" style="color: #696969;"> Default Sound </a>', $("#x").hide(), document.getElementById("linkM").style.margin = "0px 50px 0 50px";
-        else {
-            var n = domain_from_url(e.mytext);
-            t.innerHTML = '<a href="' + e.mytext + '" target="_blank" style="color: #696969;">' + n + "</a>", $("#x").show(), document.getElementById("linkM").style.margin = "0px 0px 0 50px"
-        }
-        var i = document.getElementById("chat_linkM");
-        if (void 0 === e.chat_mytext || "" === e.chat_mytext) i.innerHTML = '<a href="' + chrome.runtime.getURL("chat_melody.mp3") + '" target="_blank" style="color: #696969;"> Default Sound </a>', $("#chat_x").hide(), document.getElementById("chat_linkM").style.margin = "0px 50px 0 50px";
-        else {
-            var o = domain_from_url(e.chat_mytext);
-            i.innerHTML = '<a href="' + e.chat_mytext + '" target="_blank" style="color: #696969;">' + o + "</a>", $("#chat_x").show(), document.getElementById("chat_linkM").style.margin = "0px 0px 0 50px"
-        }
-        var c = document.getElementById("tele_idM");
-        void 0 === e.tid_mytext || "" === e.tid_mytext ? ($(".Tele_ID").hide(), $("#t_x").hide(), document.getElementById("tele_idM").style.margin = "0px 50px 0 50px") : ($(".Tele_ID").show(), $("#t_x").show(), c.innerHTML = '<a style="color: #696969;">' + e.tid_mytext + "</a>", document.getElementById("tele_idM").style.margin = "0px 0px 0 50px")
-    }))
+var SETTINGS = [{
+    key: "mytext",
+    modeKey: "windowMode",
+    // Shown when nothing is set; the alert falls back to this bundled sound.
+    fallbackLabel: "Default Sound",
+    fallbackSound: "melodyFinal.mp3"
+}, {
+    key: "chat_mytext",
+    modeKey: "chat_windowMode",
+    fallbackLabel: "Default Sound",
+    fallbackSound: "chat_melody.mp3"
+}];
+
+function el(id) { return document.getElementById(id); }
+
+function flash(message, ms) {
+    var box = el("Saved");
+    box.textContent = message;
+    setTimeout(function() { box.textContent = ""; }, ms || 1200);
 }
 
-function SavedLink() {
-    var e = document.getElementById("Saved");
-    e.innerHTML = "Saved!", setTimeout((function() {
-        e.innerHTML = ""
-    }), 1e3)
-}
-version.innerHTML = "v" + chrome.runtime.getManifest().version, CurrentLink(), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[type="submit"]').addEventListener("click", (function() {
-        var e = document.getElementById("YTlink").value,
-            t = document.getElementById("Chat_YTlink").value,
-            n = document.getElementById("TeleID").value,
-            i = 0;
-        if ("" === e.trim() && "" === t.trim() && "" === n.trim()) {
-            (r = document.getElementById("Saved")).innerHTML = "Nothing was typed!", document.getElementsByTagName("body")[0].appendChild(r), setTimeout((function() {
-                r.innerHTML = ""
-            }), 1e3)
-        }
-        if ("" != e.trim()) {
-            var o = e.trim();
-            chrome.storage.sync.set({
-                mytext: o
-            }, (function() {
-                console.log("Value is set to " + o)
-            })), i = 1
-        }
-        if ("" != t.trim()) {
-            var c = t.trim();
-            chrome.storage.sync.set({
-                chat_mytext: c
-            }, (function() {
-                console.log("Chat value is set to " + c)
-            })), i = 1
-        }
-        if ("" != n.trim() && null != n.trim().match(/^[0-9]+$/)) {
-            var a = n.trim();
-            chrome.storage.sync.set({
-                tid_mytext: a
-            }, (function() {
-                console.log("Telegram ID value is set to " + a)
-            })), i = 1
-        }
-        if (null == n.trim().match(/^[0-9]+$/)) {
-            var r;
-            (r = document.getElementById("Saved")).innerHTML = "Telegram ID can only be in numbers!", document.getElementsByTagName("body")[0].appendChild(r), setTimeout((function() {
-                r.innerHTML = ""
-            }), 3e3)
-        }
-        i && (SavedLink(), CurrentLink())
-    }), !1)
-}), !1), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[type="default"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            mytext: ""
-        }, (function() {})), chrome.storage.sync.set({
-            chat_mytext: ""
-        }, (function() {})), chrome.storage.sync.set({
-            tid_mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1);
-var i, coll = document.getElementsByClassName("collapsible");
-for (i = 0; i < coll.length; i++) coll[i].addEventListener("click", (function() {
-    this.classList.toggle("active"), "block" === this.nextElementSibling.style.display ? $(".content").slideUp() : $(".content").slideDown()
-}));
-
-function eraseText() {
-    document.getElementById("YTlink").value = "", document.getElementById("Chat_YTlink").value = "", document.getElementById("TeleID").value = ""
+function domainFromUrl(url) {
+    var m = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im);
+    if (!m) return url;
+    var host = m[1];
+    var trimmed = host.match(/^[^\.]+\.(.+\..+)$/);
+    return trimmed ? trimmed[1] : host;
 }
 
-function domain_from_url(e) {
-    var t, n;
-    return (n = e.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im)) && (n = (t = n[1]).match(/^[^\.]+\.(.+\..+)$/)) && (t = n[1]), t
+function save(key, value) {
+    var patch = {};
+    patch[key] = value;
+    chrome.storage.sync.set(patch, function() {});
 }
-document.addEventListener("DOMContentLoaded", (function() {
-    for (var e = document.getElementsByTagName("plug"), t = 0; t < e.length; t++) ! function() {
-        var n = e[t],
-            i = n.href;
-        n.onclick = function() {
-            chrome.tabs.create({
-                active: !0,
-                url: i
-            })
+
+// --- rendering --------------------------------------------------------------
+
+function render() {
+    var keys = [];
+    SETTINGS.forEach(function(s) {
+        keys.push(s.key);
+        if (s.modeKey) keys.push(s.modeKey);
+    });
+
+    chrome.storage.sync.get(keys, function(stored) {
+        SETTINGS.forEach(function(setting) {
+            var value = stored[setting.key];
+            var isSet = value !== undefined && value !== "";
+
+            var display = el("val_" + setting.key);
+            display.textContent = isSet ? domainFromUrl(value) : setting.fallbackLabel;
+            display.title = isSet ? value : setting.fallbackLabel;
+            display.className = isSet ? "cardValue" : "cardValue muted";
+
+            // The reset control only makes sense once something is set.
+            var clear = document.querySelector('[data-clear="' + setting.key + '"]');
+            if (clear) clear.style.visibility = isSet ? "visible" : "hidden";
+
+            if (!setting.modeKey) return;
+
+            var box = document.querySelector('[data-mode="' + setting.modeKey + '"]');
+            var note = el("note_" + setting.key);
+
+            if (isSet) {
+                // A link can only be shown in a window, so this is not a choice
+                // to offer. Tick it, lock it, and say why -- mirrors the same
+                // rule in decideAlert(), which is the authority.
+                if (box) {
+                    box.checked = true;
+                    box.disabled = true;
+                }
+                if (note) note.textContent = "A link always opens in a window. Remove it to play a sound instead.";
+                return;
+            }
+
+            // No link: window is the default, and only an explicit false --
+            // someone deliberately unticking -- gives invisible playback.
+            if (box) {
+                box.checked = stored[setting.modeKey] !== false;
+                box.disabled = false;
+            }
+            if (note) note.textContent = "";
+        });
+    });
+}
+
+function openEditor(setting) {
+    chrome.storage.sync.get([setting.key], function(stored) {
+        var input = el("in_" + setting.key);
+        input.value = stored[setting.key] || "";
+        el("edit_" + setting.key).classList.add("open");
+        input.focus();
+        input.select();
+    });
+}
+
+function closeEditor(setting) {
+    el("edit_" + setting.key).classList.remove("open");
+}
+
+function commitEditor(setting) {
+    var value = el("in_" + setting.key).value.trim();
+    save(setting.key, value);
+    closeEditor(setting);
+    render();
+    flash(value === "" ? "Reset to default" : "Saved");
+}
+
+// --- wiring -----------------------------------------------------------------
+
+el("versionCheck").textContent = "v" + chrome.runtime.getManifest().version;
+
+SETTINGS.forEach(function(setting) {
+    var edit = document.querySelector('[data-edit="' + setting.key + '"]');
+    if (edit) edit.addEventListener("click", function() { openEditor(setting); });
+
+    var doSave = document.querySelector('[data-save="' + setting.key + '"]');
+    if (doSave) doSave.addEventListener("click", function() { commitEditor(setting); });
+
+    var cancel = document.querySelector('[data-cancel="' + setting.key + '"]');
+    if (cancel) cancel.addEventListener("click", function() { closeEditor(setting); });
+
+    var clear = document.querySelector('[data-clear="' + setting.key + '"]');
+    if (clear) clear.addEventListener("click", function() {
+        save(setting.key, "");
+        closeEditor(setting);
+        render();
+        flash("Reset to default");
+    });
+
+    // Enter saves, Escape cancels -- the popup is small and closes easily, so
+    // reaching for the mouse to confirm a one-line edit is a nuisance.
+    var input = el("in_" + setting.key);
+    if (input) input.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") { event.preventDefault(); commitEditor(setting); }
+        if (event.key === "Escape") { event.preventDefault(); closeEditor(setting); }
+    });
+
+    if (!setting.modeKey) return;
+    var box = document.querySelector('[data-mode="' + setting.modeKey + '"]');
+    if (box) box.addEventListener("change", function() {
+        // Stored explicitly so "off" survives the default-on rule.
+        save(setting.modeKey, this.checked);
+        render();
+        flash("Saved");
+    });
+});
+
+el("Buttons").querySelector('button[type="default"]').addEventListener("click", function() {
+    SETTINGS.forEach(function(setting) {
+        save(setting.key, "");
+        if (setting.modeKey) save(setting.modeKey, true);
+        closeEditor(setting);
+    });
+    render();
+    flash("Everything reset");
+});
+
+// Point the cloud button at whatever the config endpoint last told us. The
+// href in popup.html is the offline fallback, so a failed lookup or an
+// unreachable server leaves the button working exactly as before.
+try {
+    chrome.runtime.sendMessage({ type: "GET_CONFIG" }, function(config) {
+        void chrome.runtime.lastError;
+        if (!config || !config.testPageUrl) return;
+        // Never navigate to whatever a server hands back unchecked: this link
+        // is opened by the whole Support team.
+        if (!/^https:\/\//i.test(config.testPageUrl)) return;
+        el("reopenCommitment").href = config.testPageUrl;
+    });
+} catch (e) {
+    // Worker unavailable; the fallback href stands.
+}
+
+// Version line expands the "what's new" panel.
+Array.prototype.forEach.call(document.getElementsByClassName("collapsible"), function(node) {
+    node.addEventListener("click", function() {
+        this.classList.toggle("active");
+        this.nextElementSibling.style.display === "block" ? $(".content").slideUp() : $(".content").slideDown();
+    });
+});
+
+// Gear icon toggles between the main view and the settings view.
+$(document).ready(function() {
+    var showingMain = true;
+    $("#settings").click(function() {
+        if (showingMain) {
+            $(".aligncenter").slideUp();
+            $("#link_settings").slideDown();
+        } else {
+            $(".aligncenter").slideDown();
+            $("#link_settings").slideUp();
         }
-    }()
-})), $(document).ready((function() {
-    var e = 1;
-    $("#settings").click((function() {
-        1 === e ? ($(".aligncenter").slideUp(), $("#link_settings").slideDown(), e = 0) : ($(".aligncenter").slideDown(), $("#link_settings").slideUp(), e = 1)
-    }))
-})), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[class="x"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[class="chat_x"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            chat_mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1), document.addEventListener("DOMContentLoaded", (function() {
-    document.querySelector('button[class="t_x"]').addEventListener("click", (function() {
-        chrome.storage.sync.set({
-            tid_mytext: ""
-        }, (function() {})), SavedLink(), CurrentLink()
-    }), !1)
-}), !1);
+        showingMain = !showingMain;
+    });
+});
+
+render();
